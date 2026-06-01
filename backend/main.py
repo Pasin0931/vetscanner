@@ -2,6 +2,12 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import base, SessionLocal, engine
+import model
+
+print(base.metadata.tables.keys())
+
+base.metadata.create_all(bind=engine)
+
 
 app = FastAPI()
 
