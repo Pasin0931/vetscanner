@@ -1,12 +1,6 @@
-"use client"
+import UsrAuth from "@/components/auth"
 
-import Register from "@/components/register"
-import Login from "@/components/login"
-
-export default function LoginPage() {
-    return (
-        <div>
-            <Login/>
-        </div>
-    )
+export default async function AuthPage({ searchParams }: { searchParams: Promise<{tab?: string}>}) {
+    const param = await searchParams
+    return <UsrAuth startTab={param.tab} />
 }

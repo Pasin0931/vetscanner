@@ -48,7 +48,7 @@ export default function RootLayout({ children }: {
         <div className="flex-3/5 justify-center">
           <div className="flex flex-col bg-[#14544F] justify-center h-screen px-36">
 
-            <div className="flex flex-col justify-center bg-[#161616] p-15 text-start text-[#B1BB1E]">
+            <div className="flex flex-col justify-center bg-[#161616] p-15 text-start text-[#B1BB1E] rounded-xl">
 
               <div className="pl-3">
                 <h1 className="text-[50px] font-bold">Vetscanner</h1>
