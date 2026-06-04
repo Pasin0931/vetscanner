@@ -10,7 +10,9 @@ class Users(base):
     email = Column(String, nullable=False, unique=True)
     password = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-
+    name = Column(String)
+    provider = Column(String)
+    provider_id = Column(String)
     patients = relationship("Patients", back_populates="patient_of")
 
 class Patients(base):
@@ -46,4 +48,10 @@ class Scan_Logs(base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     patient = relationship("Patients", back_populates="scan_logs")
-    
+
+class UserSession(base):
+    __tablename__ = "sessions"
+
+    id = Column(String, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    expires_at = Column(DateTime)

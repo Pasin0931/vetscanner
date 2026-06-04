@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import base, SessionLocal, engine
 import model
+from auth.auth_router import router
 
 print(base.metadata.tables.keys())
 
@@ -23,6 +24,11 @@ def get_current_user():
     return {"id": 1}
 
 # Auth ========================================================================================================================================================
+app.include_router(
+    router,
+    prefix="/auth",
+    tags=["Auth"]
+)
 @app.post("/auth/login")
 def user_login():
     return {"message": "login"}
