@@ -4,6 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import base, SessionLocal, engine
 import model
 from auth.auth_router import router
+from starlette.middleware.sessions import SessionMiddleware
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 
 print(base.metadata.tables.keys())
 
@@ -11,6 +16,11 @@ base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SESSION_SECRET_KEY", "a-secure-fallback-local-key-12345"),
+)
 
 app.add_middleware(
     CORSMiddleware,
