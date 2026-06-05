@@ -7,8 +7,8 @@ from auth.auth_router import router
 from starlette.middleware.sessions import SessionMiddleware
 import os
 from dotenv import load_dotenv
-load_dotenv()
 
+load_dotenv()
 
 print(base.metadata.tables.keys())
 
@@ -39,22 +39,22 @@ app.include_router(
     prefix="/auth",
     tags=["Auth"]
 )
-@app.post("/auth/login")
-def user_login():
-    return {"message": "login"}
+# @app.post("/auth/login")
+# def user_login():
+#     return {"message": "login"}
 
-@app.post("/auth/register")
-def user_registration():
-    return {"message": "register"}
+# @app.post("/auth/register")
+# def user_registration():
+#     return {"message": "register"}
 
-@app.post("/auth/logout")
-def user_logout():
-    return {"message": "logout"}
+# @app.post("/auth/logout")
+# def user_logout():
+#     return {"message": "logout"}
 
-# admin authority (delete later when finished)
-@app.delete("/auth/login")
-def nuke_users():
-    return {"message": "user nuked"}
+# # admin authority (delete later when finished)
+# @app.delete("/auth/login")
+# def nuke_users():
+#     return {"message": "user nuked"}
 
 # Patients ========================================================================================================================================================
 @app.get("/patients")

@@ -1,26 +1,16 @@
 from dotenv import load_dotenv
 import os
 import secrets
-
 from datetime import datetime, timedelta
-
 from sqlalchemy.orm import Session
-
 from model import Users, UserSession
 
 load_dotenv()
 
-SESSION_EXPIRE_DAYS = int(
-    os.getenv("SESSION_EXPIRE_DAYS", 7)
-)
+SESSION_EXPIRE_DAYS = int(os.getenv("SESSION_EXPIRE_DAYS", 7))
 
 
-def get_or_create_user(
-    db: Session,
-    email: str,
-    name: str,
-    provider_id: str
-):
+def get_or_create_user(db: Session,email: str,name: str,provider_id: str):
     user = (
         db.query(Users)
         .filter(Users.email == email)
@@ -44,10 +34,7 @@ def get_or_create_user(
     return user
 
 
-def create_session(
-    db: Session,
-    user_id: str
-):
+def create_session(db: Session, user_id: str):
     session_id = secrets.token_urlsafe(32)
 
     session = UserSession(
@@ -63,10 +50,7 @@ def create_session(
     return session_id
 
 
-def get_user_by_session(
-    db: Session,
-    session_id: str
-):
+def get_user_by_session(db: Session, session_id: str):
     session = (
         db.query(UserSession)
         .filter(UserSession.id == session_id)
@@ -88,10 +72,7 @@ def get_user_by_session(
     return user
 
 
-def delete_session(
-    db: Session,
-    session_id: str
-):
+def delete_session(db: Session,session_id: str):
     (
         db.query(UserSession)
         .filter(UserSession.id == session_id)

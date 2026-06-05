@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Tex
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import base
+from pydantic import BaseModel
 
 class Users(base):
     __tablename__ = "users"
@@ -55,3 +56,12 @@ class UserSession(base):
     id = Column(String, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     expires_at = Column(DateTime)
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str

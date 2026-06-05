@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 
 import { motion } from "framer-motion"
+import { useAuth } from "@/hook/useAuth"
 
 type UsrAuthProps = {
     startTab: string | undefined
@@ -21,42 +22,24 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
     const [activeTab, setActiveTab] = useState(startTab)
 
     const [pageLoad, setPageLoad] = useState(false)
+    const { login, register, googleLogin } = useAuth()
 
     const handle_login_bt = async () => {
-        alert("Login")
-
-        if (!email || !password) {
-            alert("Login & Register must be filled")
-            return
+        try {
+            await login(email, password)
+            alert("Login success")
+        } catch (err: any) {
+            alert(err.message)
         }
-
-        // get users db
-
-        // if current email not in users db, alert("Email not found") return
-        // if input email in users db but password not matched, alert("Password incorrect")
-        // else POST newUsr into users db
-
-        setEmail("")
-        setPassword("")
     }
 
     const handle_register_bt = async () => {
-        alert("Register")
-
-        if (!email || !password) {
-            alert("Login & Register must be filled")
-            return
+        try {
+            await register(email, password)
+            alert("Register success")
+        } catch (err: any) {
+            alert(err.message)
         }
-
-        const newUsr = { email, password, rememberMe }
-
-        // get users db
-
-        // if current email in users db, alert("Email already registered") return
-        // else POST newUsr into users db
-
-        setEmail("")
-        setPassword("")
     }
 
     useEffect(() => {
@@ -110,7 +93,7 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
                 <div className="flex flex-col items-center justify-center ">
                     <button
                         onClick={() => {
-                        window.location.href = "http://localhost:8000/auth/google/login";
+                        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/login`;
                         }}
                         className="px-6 py-2 bg-white border rounded-lg hover:bg-gray-100 transition "
                     >
