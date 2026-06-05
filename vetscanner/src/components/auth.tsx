@@ -104,6 +104,19 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
                     >
                     </Input>
                 </div>
+                <div>
+                     <h2 className="font-bold ml-6 mb-2  text-center">Or log in with google</h2>
+                </div>
+                <div className="flex flex-col items-center justify-center ">
+                    <button
+                        onClick={() => {
+                        window.location.href = "http://localhost:8000/auth/google/login";
+                        }}
+                        className="px-6 py-2 bg-white border rounded-lg hover:bg-gray-100 transition "
+                    >
+                        Sign in with Google
+                    </button>
+                </div>
             </div>
 
             {activeTab === "Login" ? (

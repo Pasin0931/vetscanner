@@ -19,7 +19,7 @@ app = FastAPI()
 
 app.add_middleware(
     SessionMiddleware,
-    secret_key=os.getenv("SESSION_SECRET_KEY", "a-secure-fallback-local-key-12345"),
+    secret_key=os.getenv("SESSION_SECRET_KEY"),
 )
 
 app.add_middleware(
