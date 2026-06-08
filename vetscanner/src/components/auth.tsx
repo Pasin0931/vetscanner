@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion"
 import { useAuth } from "@/hook/useAuth"
 
@@ -24,10 +24,12 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
     const [pageLoad, setPageLoad] = useState(false)
     const { login, register, googleLogin } = useAuth()
 
+    const router = useRouter();
     const handle_login_bt = async () => {
         try {
             await login(email, password)
             alert("Login success")
+            router.push("/dashboard");
         } catch (err: any) {
             alert(err.message)
         }
