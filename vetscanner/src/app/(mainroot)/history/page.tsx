@@ -1,7 +1,7 @@
+import AboutUs from "@/components/aboutus"
+
 export default function History() {
     return (
-        <>
-            <h1></h1>
-        </>
+        <AboutUs/>
     )
 }

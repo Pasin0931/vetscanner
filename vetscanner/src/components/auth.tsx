@@ -29,8 +29,10 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
         try {
             await login(email, password)
             alert("Login success")
+            location.reload()
             router.push("/dashboard");
         } catch (err: any) {
+            console.log("Login failed !!!", err)
             alert(err.message)
         }
     }
@@ -44,9 +46,26 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
         }
     }
 
+    const handle_oauth = async () => {
+        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/login`
+        // router.push("/authentication?tab=Login")
+    }
+
     useEffect(() => {
         setEmail("")
         setPassword("")
+
+        const check_have_cookie = async () => {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {credentials: "include", method: "GET"})
+            if (res.ok) {
+                alert("Registered")
+                router.push("/dashboard")
+            } else {
+                router.push("/authentication?tab=Login")
+            }
+        }
+
+        check_have_cookie()
     }, [])
 
     return (
@@ -89,51 +108,55 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
                     >
                     </Input>
                 </div>
-                <div>
-                     <h2 className="font-bold ml-6 mb-2  text-center">Or log in with google</h2>
+
+                {activeTab === "Login" ? (
+                    <div className="flex flex-row justify-between items-center gap-23 px-3 w-full">
+                        <div className="flex flex-row justify-between items-center gap-3 font-bold text-[13px]">
+                            <Checkbox
+                                checked={rememberMe}
+                                onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
+                            />
+                            <button className="font-bold">Remember me</button>
+                        </div>
+                        <button className="font-bold text-[13px]">
+                            Forgot Password
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex flex-row justify-start items-start pr-46.5">
+                        <div className="flex flex-row justify-start items-center gap-3 ml-3 font-bold text-[13px]">
+                            <Checkbox
+                                checked={rememberMe}
+                                onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
+                            />
+                            <button className="font-bold">Remember me</button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex flex-row justify-center items-center">
+                    {activeTab === "Login" ? (
+                        <Button className="bg-[#B1BB1E] text-black font-bold px-6 w-24" onClick={() => handle_login_bt()}>Login</Button>
+                    ) : (
+                        <Button className="bg-[#B1BB1E] text-black font-bold px-6 w-24" onClick={() => handle_register_bt()}>Register</Button>
+                    )}
                 </div>
+
+                <div>
+                    <h2 className="font-bold text-center">Or {activeTab?.toLowerCase()} in with google</h2>
+                </div>
+
                 <div className="flex flex-col items-center justify-center ">
                     <button
                         onClick={() => {
-                        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/login`;
+                            handle_oauth()
                         }}
                         className="px-6 py-2 bg-white border rounded-lg hover:bg-gray-100 transition "
                     >
-                        Sign in with Google
+                        {activeTab} in with Google
                     </button>
                 </div>
             </div>
-
-            {activeTab === "Login" ? (
-                <div className="flex flex-row justify-between itme-center gap-23 pt-3">
-                    <div className="flex flex-row justify-between items-center gap-3 font-bold text-[13px]">
-                        <Checkbox
-                            checked={rememberMe}
-                            onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
-                        />
-                        <button className="font-bold">Remember me</button>
-                    </div>
-                    <button className="font-bold text-[13px]">
-                        Forgot Password
-                    </button>
-                </div>
-            ) : (
-                <div className="flex flex-row justify-start itme-start gap-23 pt-3 pr-46.5">
-                    <div className="flex flex-row justify-start items-center gap-3 font-bold text-[13px]">
-                        <Checkbox
-                            checked={rememberMe}
-                            onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
-                        />
-                        <button className="font-bold">Remember me</button>
-                    </div>
-                </div>
-            )}
-
-            {activeTab === "Login" ? (
-                <Button className="bg-[#B1BB1E] text-black font-bold px-6 mt-10 w-24" onClick={() => handle_login_bt()}>Login</Button>
-            ) : (
-                <Button className="bg-[#B1BB1E] text-black font-bold px-6 mt-10 w-24" onClick={() => handle_register_bt()}>Register</Button>
-            )}
 
         </div>
     )
