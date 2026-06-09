@@ -72,11 +72,11 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
         <div className="flex flex-col justify-center px-10 items-center bg-white py-10 gap-2 rounded-lg">
             <h1 className="text-[40px] font-bold pb-5">{activeTab}</h1>
 
-            <div className="relative flex flex-row justify-between bg-[#D9D9D9] gap-20 px-10 py-3 font-bold rounded">
+            <div className="relative flex flex-row justify-between bg-[#D9D9D9] py-3 font-bold rounded w-[90%]">
                 <motion.div
-                    className="absolute top-0 left-0 mt-1 h-10 w-25 bg-[#ADADAD] rounded"
+                    className="absolute top-0 left-0 mt-1 h-10 w-[50%] bg-[#ADADAD] rounded"
                     animate={{
-                        x: activeTab === "Login" ? 11 : 140
+                        x: activeTab === "Login" ? 4 : "100%"
                     }}
                     transition={{
                         type: "spring",
@@ -84,8 +84,8 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
                         damping: 25
                     }}
                 />
-                <button onClick={() => setActiveTab("Login")} className="relative z-10">Login</button>
-                <button onClick={() => setActiveTab("Register")} className="relative z-10">Register</button>
+                <button onClick={() => setActiveTab("Login")} className="relative z-10 w-[50%] text-center">Login</button>
+                <button onClick={() => setActiveTab("Register")} className="relative z-10 w-[50%] text-center">Register</button>
             </div>
 
             <div className="flex flex-col gap-7 pt-7 w-80">
