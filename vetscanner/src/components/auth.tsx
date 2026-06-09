@@ -29,7 +29,7 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
         try {
             await login(email, password)
             alert("Login success")
-            location.reload()
+            // location.reload()
             router.push("/dashboard");
         } catch (err: any) {
             console.log("Login failed !!!", err)
