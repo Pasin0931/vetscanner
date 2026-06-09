@@ -1,7 +1,7 @@
-import AboutUs from "@/components/aboutus"
+import DisplayPage from "@/components/patient/display"
 
 export default function Patient() {
     return (
-        <AboutUs/>
+        <DisplayPage/>
     )
 }
