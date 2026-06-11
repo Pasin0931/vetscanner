@@ -15,108 +15,94 @@ import {
     ComboboxList,
 } from "@/components/ui/combobox"
 
+type Patient = {
+    id: number
+    name: string
+    breed: string | null
+    age: number | null
+    weight: number | null
+    gender: string | null
+    description: string | null
+    species: string
+    patient_portrait: string | null
+    status: string | null
+    user_id: number
+    created_at: string
+}
+
 export default function EditPage() {
 
     const { id } = useParams()
     const router = useRouter()
 
+    const species_mock = ["cat", "dog"]
+
     const [name, setName] = useState("")
     const [description, setDescription] = useState("")
     const [species, setSpecies] = useState("")
+    const [breed, setBreed] = useState("")
+    const [age, setAge] = useState<number>(0)
+    const [weight, setWeight] = useState<number>(0)
+    const [gender, setGender] = useState("")
+    const [status, setStatus] = useState("")
     const [picture_url, setPictureUrl] = useState("")
 
-    const species_mock = ["cat", "dog"]
-    const [mock, setMock] = useState(
-        [
-            {
-                "id": 1,
-                "name": "dog1",
-                "description": "dog dog dog dogaaaaaaakajbjkbcdwadwadwadawgvsavxcvvwacvaw dwa awd adadwa adwwawa",
-                "species": "dog",
-                "picture_url": "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80",
-            },
-            {
-                "id": 2,
-                "name": "dog2",
-                "description": "dog dog dog dog",
-                "species": "dog",
-                "picture_url": "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80",
-            },
-            {
-                "id": 3,
-                "name": "dog3",
-                "description": "dog dog dog dog",
-                "species": "dog",
-                "picture_url": "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80",
-            },
-            {
-                "id": 4,
-                "name": "dog4",
-                "description": "dog dog dog dog",
-                "species": "dog",
-                "picture_url": "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80",
-            },
-            {
-                "id": 5,
-                "name": "dog5",
-                "description": "dog dog dog dog",
-                "species": "dog",
-                "picture_url": "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80",
-            },
-            {
-                "id": 6,
-                "name": "dog6",
-                "description": "dog dog dog dog",
-                "species": "dog",
-                "picture_url": "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80",
-            },
-            {
-                "id": 7,
-                "name": "dog6",
-                "description": "dog dog dog dog",
-                "species": "dog",
-                "picture_url": "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80",
-            },
-            {
-                "id": 8,
-                "name": "dog6",
-                "description": "dog dog dog dog",
-                "species": "dog",
-                "picture_url": "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80",
-            },
-            {
-                "id": 9,
-                "name": "dog6",
-                "description": "dog dog dog dog",
-                "species": "dog",
-                "picture_url": "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80",
-            },
-        ]
-    )
+    const [loading, setLoading] = useState(false)
 
-    useEffect(() => {
-        const patient = mock.find((p) => p.id === Number(id))
-        if (patient) {
-            setName(patient.name)
-            setDescription(patient.description)
-            setSpecies(patient.species)
-            setPictureUrl(patient.picture_url)
-        }
-    }, [id])
-
-    const handle_save = () => {
+    const handle_save = async () => {
         try {
-            alert(`Saved: ${name}`)
-            router.push("/patient")
+            const params = new URLSearchParams({
+                name_: name,
+                breed_: breed,
+                age_: age.toString(),
+                weight_: weight.toString(),
+                gender_: gender,
+                description_: description,
+                species_: species,
+                potrait_: picture_url,
+                status_: status
+            })
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients/${id}?${params}`, {
+                method: "PUT",
+                credentials: "include"
+            })
+            if (res.ok) {
+                alert("Patient saved !")
+                router.push("/patient")
+            } else {
+                const err = await res.json()
+                alert(JSON.stringify(err))
+            }
         } catch (err) {
             console.error("error --> ", err)
             alert("Error while saving patient")
         }
     }
 
+    useEffect(() => {
+        const fetch_patient = async () => {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients/${id}`, {
+                credentials: "include"
+            })
+            if (res.ok) {
+                const data: Patient = await res.json()
+                setName(data.name)
+                setDescription(data.description ?? "")
+                setSpecies(data.species)
+                setBreed(data.breed ?? "")
+                setAge(data.age ?? 0)
+                setWeight(data.weight ?? 0)
+                setGender(data.gender ?? "")
+                setStatus(data.status ?? "")
+                setPictureUrl(data.patient_portrait ?? "")
+            }
+        }
+        fetch_patient()
+    }, [id])
+
     return (
-        <div className="flex flex-col justify-center items-center w-[95%] px-5">
-            <Card className="mt-5 p-8 w-[95%] border-3 bg-white">
+        <div className="flex flex-col items-center w-[95%] h-170 px-5">
+            <Card className="mt-5 p-8 w-[95%] border-3 bg-white overflow-y-auto">
                 <div className="flex flex-col gap-4">
                     <h1 className="font-bold text-4xl">Edit Patient</h1>
 
@@ -131,16 +117,60 @@ export default function EditPage() {
                     </div>
 
                     <div className="flex flex-col gap-1">
+                        <label className="font-semibold text-sm">Breed</label>
+                        <Input value={breed} onChange={(e) => setBreed(e.target.value)} placeholder="Enter breed" />
+                    </div>
+
+                    <div className="flex flex-row gap-4">
+                        <div className="flex flex-col gap-1 w-full">
+                            <label className="font-semibold text-sm">Age</label>
+                            <Input value={age} placeholder="Enter age" type="number" onChange={(e) => setAge(Number(e.target.value))} />
+                        </div>
+                        <div className="flex flex-col gap-1 w-full">
+                            <label className="font-semibold text-sm">Weight (kg)</label>
+                            <Input value={weight} placeholder="Enter weight" type="number" onChange={(e) => setWeight(Number(e.target.value))} />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                        <label className="font-semibold text-sm">Gender</label>
+                        <Combobox items={["male", "female"]} onValueChange={(val) => setGender(String(val))}>
+                            <ComboboxInput placeholder={gender || "Select gender"} />
+                            <ComboboxContent>
+                                <ComboboxEmpty>No items found.</ComboboxEmpty>
+                                <ComboboxList>
+                                    {(item) => (
+                                        <ComboboxItem key={item} value={item}>{item}</ComboboxItem>
+                                    )}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                        <label className="font-semibold text-sm">Status</label>
+                        <Combobox items={["active", "inactive"]} onValueChange={(val) => setStatus(String(val))}>
+                            <ComboboxInput placeholder={status || "Select status"} />
+                            <ComboboxContent>
+                                <ComboboxEmpty>No items found.</ComboboxEmpty>
+                                <ComboboxList>
+                                    {(item) => (
+                                        <ComboboxItem key={item} value={item}>{item}</ComboboxItem>
+                                    )}
+                                </ComboboxList>
+                            </ComboboxContent>
+                        </Combobox>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
                         <label className="font-semibold text-sm">Species</label>
-                        <Combobox items={species_mock}>
+                        <Combobox items={species_mock} onValueChange={(val) => setSpecies(String(val))}>
                             <ComboboxInput placeholder={species || "Select a species"} />
                             <ComboboxContent>
                                 <ComboboxEmpty>No items found.</ComboboxEmpty>
                                 <ComboboxList>
                                     {(item) => (
-                                        <ComboboxItem key={item} value={item}>
-                                            {item}
-                                        </ComboboxItem>
+                                        <ComboboxItem key={item} value={item}>{item}</ComboboxItem>
                                     )}
                                 </ComboboxList>
                             </ComboboxContent>

@@ -1,12 +1,16 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException, Request
+from sqlalchemy.orm import Session
+from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import base, SessionLocal, engine
-import model
+from database import base, SessionLocal, engine, get_db
 from auth.auth_router import router
 from starlette.middleware.sessions import SessionMiddleware
+from auth.auth_dependency import get_current_user
 import os
 from dotenv import load_dotenv
+
+from model import Users, Patients, Scan_Logs
 
 load_dotenv()
 
@@ -29,9 +33,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-def get_current_user():
-    return {"id": 1}
 
 # Auth ========================================================================================================================================================
 app.include_router(
@@ -58,24 +59,73 @@ app.include_router(
 
 # Patients ========================================================================================================================================================
 @app.get("/patients")
-def get_all_patients(current_user=Depends(get_current_user)):
-    return {"message": f"Return all patients for user id {current_user['id']}"}
+def get_all_patients(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Patients).filter(Patients.user_id == current_user.id).all()
 
 @app.get("/patients/{patient_id}")
-def get_patient(patient_id: int, current_user=Depends(get_current_user)):
-    return {"message": f"Return patient {patient_id} for user id {current_user['id']}"}
+def get_patient(patient_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    patient = db.query(Patients).filter(
+        Patients.id == patient_id,
+        Patients.user_id == current_user.id
+    ).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return patient
 
 @app.post("/patients")
-def create_patient(current_user=Depends(get_current_user)):
-    return {"message": f"Create patient for user id {current_user['id']}"}
+def create_patient(name_: str, breed_: str, age_: int, weight_: float, gender_: str, description_: str, species_: str, potrait_: str, status_: str, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    db.add(Patients(
+        name=name_,
+        breed=breed_,
+        age=age_,
+        weight=weight_,
+        gender=gender_,
+        description=description_,
+        species=species_,
+        patient_portrait=potrait_,
+        status=status_,
+        user_id=current_user.id
+    ))
+    db.commit()
+    return {"message": "patients added to db"}
 
 @app.put("/patients/{patient_id}")
-def edit_patient(patient_id: int, current_user=Depends(get_current_user)):
-    return {"message": f"Update patient id {patient_id} if belongs to user id {current_user['id']}"}
+def edit_patient(name_: str, breed_: str, age_: int, weight_: float, gender_: str, description_: str, species_: str, potrait_: str, status_: str, patient_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    this_ = db.query(Patients).filter(Patients.user_id == current_user.id, Patients.id == patient_id).first()
+    if not this_:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    this_.name = name_
+    this_.breed = breed_
+    this_.age = age_
+    this_.weight = weight_
+    this_.gender = gender_
+    this_.description = description_
+    this_.species = species_
+    this_.patient_portrait = potrait_
+    this_.status = status_
+    db.commit()
+    return {"message": "patient updated"}
 
 @app.delete("/patients/{patient_id}")
-def delete_patient(patient_id: int, current_user=Depends(get_current_user)):
-    return {"message": f"Delete patient id {patient_id} from user id {current_user['id']}"}
+def delete_patient(patient_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    this_ = db.query(Patients).filter(Patients.user_id == current_user.id, Patients.id == patient_id).first()
+    if not this_:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    
+    db.delete(this_)
+    db.commit()
+    return {"message": "patient deleted"}
+
+@app.delete("/patients")
+def nuke_patients(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    this_ = db.query(Patients).all()
+    if not this_:
+        raise HTTPException(status_code=404, detail="No patients")
+    
+    db.query(Patients).delete()
+    db.execute(text("ALTER SEQUENCE patients_id_seq RESTART WITH 1"))
+    db.commit()
+    return {"message": "patients nuked"}
 
 # History Logs ========================================================================================================================================================
 @app.get("/histories")
