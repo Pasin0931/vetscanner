@@ -1,7 +1,7 @@
-import AboutUs from "@/components/aboutus"
+import DisplayHistory from "@/components/history/display"
 
 export default function History() {
     return (
-        <AboutUs/>
+        <DisplayHistory/>
     )
 }
