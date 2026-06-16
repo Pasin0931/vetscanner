@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 
 from model import Users, Patients, Scan_Logs
 
+from config import cloudinary
+from cloudinary_api.upload import router as upload_router
 load_dotenv()
 
 print(base.metadata.tables.keys())
@@ -33,6 +35,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(upload_router)
+
 
 # Auth ========================================================================================================================================================
 app.include_router(
