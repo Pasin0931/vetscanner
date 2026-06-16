@@ -33,7 +33,7 @@ import { ScrollArea, ScrollBar } from "../ui/scroll-area"
 
 
 import { Input } from "../ui/input"
-import React from "react"
+import React, { useState } from "react"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -48,7 +48,7 @@ export function DataTable<TData, TValue> ({
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-
+    const [globalFilter, setGlobalFilter] = useState("")
     
     const table = useReactTable({
         data,
@@ -62,7 +62,19 @@ export function DataTable<TData, TValue> ({
         state: {
             sorting,
             columnFilters,
-            columnVisibility
+            columnVisibility,
+            globalFilter
+        },
+        onGlobalFilterChange: setGlobalFilter,  
+        
+        globalFilterFn: (row, _, filterValue) => {
+            const patientName = row.getValue<string>("patient_name") ?? ""
+            const diagnose = row.getValue<string>("diagnose") ?? ""
+
+            return (
+                patientName.toLowerCase().includes(filterValue.toLowerCase()) ||
+                diagnose.toLowerCase().includes(filterValue.toLowerCase())
+            )
         }
     })
 
@@ -72,9 +84,11 @@ export function DataTable<TData, TValue> ({
             <div className="flex items-center py-4">
                 {/* Search input */}                
                 <Input 
-                  placeholder="Filter patient"
-                  value={(table.getColumn("patient_name")?.getFilterValue() as string) ?? ""}
-                  onChange={ (event) => table.getColumn("patient_name")?.setFilterValue(event.target.value) }
+                  placeholder="Filter patient or diagnosis type"
+                  value={globalFilter}
+                  onChange={ (event) => setGlobalFilter(event.target.value) }
+                //   value={(table.getColumn("patient_name")?.getFilterValue() as string) ?? ""}
+                //   onChange={ (event) => table.getColumn("patient_name")?.setFilterValue(event.target.value) }
                   className="max-w-sm text-emerald-50 placeholder:text-emerald-50"            
                 />
                 {/* Visible Ticker */}

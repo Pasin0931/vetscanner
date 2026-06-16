@@ -16,6 +16,7 @@ import {
 
 export type Catalogue = {
     id: number,
+    diagnose: string,
     patient_id: number,
     patient_name: string,
     xray_image: string,
@@ -39,13 +40,18 @@ export const columns: ColumnDef<Catalogue>[] = [
         }
     },
     {
-        accessorKey: "date",
-        header: "Date-Stamp"
-    },
-    {
         accessorKey: "patient_name",
         header: "Patient Name"
     },
+    {
+        accessorKey: "diagnose",
+        header: "Diagnosis Type"
+    },
+    {
+        accessorKey: "date",
+        header: "Date-Stamp"
+    },
+    
     {
         accessorKey: "time",
         header: "Time-stamp"

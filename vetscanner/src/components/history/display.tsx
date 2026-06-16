@@ -5,6 +5,7 @@ async function getData(): Promise<Catalogue[]> {
     return [
         {
             id: 1,
+            diagnose: "cancer",
             patient_id: 69,
             patient_name: "tung tung",
             xray_image: "bo man",
@@ -17,6 +18,7 @@ async function getData(): Promise<Catalogue[]> {
         },
         {
             id: 1,
+            diagnose: "cancer",
             patient_id: 69,
             patient_name: "tung tung",
             xray_image: "bo man",
@@ -30,6 +32,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "cancer",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -43,6 +46,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "cancer",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -56,6 +60,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "cancer",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -69,6 +74,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -82,6 +88,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -95,6 +102,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -108,6 +116,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -121,6 +130,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -134,6 +144,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -147,6 +158,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -160,6 +172,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -173,6 +186,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -186,6 +200,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -199,6 +214,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -212,6 +228,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -225,6 +242,7 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "fractured",
             patient_id: 69,
             patient_name: "Man man",
             xray_image: "bo man",
@@ -238,8 +256,9 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "dna",
             patient_id: 69,
-            patient_name: "Man man",
+            patient_name: "Miguel",
             xray_image: "bo man",
             result: "ye", // May convert to PDF
             confidence_score: 0,
@@ -251,8 +270,9 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "dna",
             patient_id: 69,
-            patient_name: "Man man",
+            patient_name: "yayyya",
             xray_image: "bo man",
             result: "ye", // May convert to PDF
             confidence_score: 0,
@@ -264,8 +284,9 @@ async function getData(): Promise<Catalogue[]> {
         ,
         {
             id: 1,
+            diagnose: "dna",
             patient_id: 69,
-            patient_name: "Man man",
+            patient_name: "yayyya",
             xray_image: "bo man",
             result: "ye", // May convert to PDF
             confidence_score: 0,
