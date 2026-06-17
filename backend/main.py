@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 from model import Users, Patients, Scan_Logs
 
-from config import cloudinary
+from cloudinary_api import config
 from cloudinary_api.upload import router as upload_router
 load_dotenv()
 
