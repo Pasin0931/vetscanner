@@ -17,6 +17,8 @@ from auth.auth_dependency import get_current_user
 from model import RegisterRequest, LoginRequest, Users as User
 from auth.util import hash_password, verify_password
 
+from typing import Optional
+
 load_dotenv()
 
 FRONTEND_URL = os.getenv("FRONTEND_URL")
@@ -72,7 +74,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 
 @router.post("/logout")
 def logout(
-    session_id: str | None = Cookie(None),
+    session_id: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ):
 

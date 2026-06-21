@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import Depends
 from fastapi import Cookie
 from fastapi import HTTPException
@@ -7,7 +9,7 @@ from auth.auth_service import (get_user_by_session)
 
 
 def get_current_user(
-    session_id: str | None = Cookie(None),
+    session_id: Optional[str] = Cookie(None),
     db: Session = Depends(get_db)
 ):
 

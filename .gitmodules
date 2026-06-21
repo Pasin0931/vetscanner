@@ -1,0 +1,3 @@
+[submodule "CanineCutaneousTumors"]
+	path = CanineCutaneousTumors
+	url = https://github.com/DeepMicroscopy/CanineCutaneousTumors.git

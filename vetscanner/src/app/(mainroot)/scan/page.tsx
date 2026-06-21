@@ -1,7 +1,7 @@
-import AboutUs from "@/components/aboutus"
+import ScanPage from "@/components/scan"
 
 export default function Scan() {
     return (
-        <AboutUs/>
+        <ScanPage/>
     )
 }

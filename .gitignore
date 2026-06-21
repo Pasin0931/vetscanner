@@ -19,3 +19,6 @@ ENV/
 *.log
 *.tmp
 *.swp
+
+# Model weights (too large for git, use Git LFS or external hosting)
+*.pkl

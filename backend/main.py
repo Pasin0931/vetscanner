@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 
 from database import base, SessionLocal, engine, get_db
 from auth.auth_router import router
@@ -12,11 +13,19 @@ from dotenv import load_dotenv
 
 from model import Users, Patients, Scan_Logs
 
+from scan_lib import process_slide, generate_pdf_report
+
+import shutil
+import tempfile
+import json
+
 load_dotenv()
 
-print(base.metadata.tables.keys())
+# print(base.metadata.tables.keys())
 
 base.metadata.create_all(bind=engine)
+
+ALLOWed_FILE_TYPE = [".svs", ".tiff", ".tif", ".ndpi"]
 
 
 app = FastAPI()
@@ -129,8 +138,8 @@ def nuke_patients(current_user=Depends(get_current_user), db: Session = Depends(
 
 # History Logs ========================================================================================================================================================
 @app.get("/histories")
-def get_all_logs(current_user=Depends(get_current_user)):
-    return {"message": f"Return all histories for user id {current_user['id']}"}
+def get_all_logs(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    return db.query(Scan_Logs).filter(Patients.user_id == current_user.id).all()
 
 @app.get("/histories/{history_id}")
 def get_history(history_id: int, current_user=Depends(get_current_user)):
@@ -150,6 +159,77 @@ def nuke_scan(current_user=Depends(get_current_user)):
     return {"message": f"Nuke history db"}
 
 # Reports load process ============================================================================
-@app.post("/reports/generate/{scan_id}")
-def generate_report(scan_id: int, current_user=Depends(get_current_user)):
-    return {"message": f"Generate report for scan patient {scan_id} of user {current_user['id']}"}
+@app.post("/scan/model")
+async def scan_slide(file: UploadFile = File(...), patient_id: int = Form(...), current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+
+    patient = db.query(Patients).filter(Patients.id == patient_id, Patients.user_id == current_user.id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found !")
+ 
+    # validate file type
+    i, ext = os.path.splitext(file.filename.lower())
+    if ext not in ALLOWed_FILE_TYPE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '{ext}'. Allowed: {' '.join(ALLOWed_FILE_TYPE)}"
+        )
+ 
+    # crash mid-scan still leaves a record rather than all gone
+    scan_log = Scan_Logs(
+        patient_id=patient_id,
+        xray_image="",  # filled in with the annotated thumbnail after processing
+        status="processing",
+        model_version="UNet_resnet18_512_2 + efficientnet_1024_0",
+    )
+    db.add(scan_log)
+    db.commit()
+    db.refresh(scan_log)
+ 
+    # Stream the upload to a temp file on disk rather than buffering in memory
+    tmp_dir = tempfile.gettempdir()
+    tmp_path = os.path.join(tmp_dir, f"scan_{scan_log.id}{ext}")
+ 
+    try:
+        with open(tmp_path, "wb") as out_file:
+            shutil.copyfileobj(file.file, out_file)
+ 
+        # Run the actual segmentation + classification pipeline
+        # This is synchronous and will block for some minutes on large slides
+        result = process_slide(tmp_path)
+ 
+        # report break down
+        scan_log.xray_image = result["thumbnail"]  # annotated thumbnail, base64
+        scan_log.result = json.dumps({
+            "tumor_detected": result["tumor_detected"],
+            "diagnosis": result["diagnosis"],
+            "tumor_tile_count": result["tumor_tile_count"],
+            "vote_breakdown": result.get("vote_breakdown"),
+            "message": result["message"],
+        })
+        scan_log.confidence_score = result["confidence_score"]
+        scan_log.status = "completed"
+        db.commit()
+ 
+        # Build pdf file
+        # Its never written to disk or saved in the database, ( IMPLEMENT )
+        pdf_bytes = generate_pdf_report(result, patient.name, scan_log.id)
+ 
+        filename = f"scan_report_{patient.name}_{scan_log.id}.pdf"
+ 
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            }
+        )
+ 
+    except Exception as e:
+        scan_log.status = "failed"
+        db.commit()
+        raise HTTPException(status_code=500, detail=f"Scan processing failed: {str(e)}")
+ 
+    finally:
+        # discard .svs file after finished
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
