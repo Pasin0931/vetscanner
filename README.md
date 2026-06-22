@@ -42,57 +42,104 @@ cd backend
 
 Check what Python versions are available on your machine:
 
+**macOS / Linux:**
 ```bash
 python3.9 --version
 # or, on macOS, check for the Command Line Tools Python:
 /Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/bin/python3 --version
 ```
 
+**Windows (PowerShell):**
+```powershell
+python --version
+```
+If this doesn't print `3.9.x`, install Python 3.9 from [python.org](https://www.python.org/downloads/) and use its full path instead of `python` below.
+
 Create the virtual environment using a 3.9 interpreter specifically:
 
+**macOS / Linux:**
 ```bash
 /usr/bin/python3 -m venv venv   # adjust this path to point at a real 3.9 interpreter on your system
 source venv/bin/activate
 ```
 
+**Windows (PowerShell):**
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+If PowerShell blocks the activation script with an execution policy error, run:
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+then retry `.\venv\Scripts\Activate.ps1`.
+
 Verify you're in the right environment:
 
+**macOS / Linux:**
 ```bash
 python3 --version   # should print 3.9.x
 which python3        # should point inside backend/venv/
 ```
 
+**Windows (PowerShell):**
+```powershell
+python --version   # should print 3.9.x
+```
+Your prompt should also now show `(venv)` at the start.
+
 ### 3. Install backend dependencies
 
+**macOS / Linux:**
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+**Windows (PowerShell):**
+```powershell
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
 If `requirements.txt` is incomplete or you hit `ModuleNotFoundError` errors on startup, install the missing package and try again — common ones encountered during setup include:
 
-```bash
+```
 pip install "fastai==1.0.61" --no-deps
 pip install "torch==1.13.1" "torchvision==0.14.1"
 pip install pyyaml beautifulsoup4 matplotlib numexpr packaging pandas scipy nvidia-ml-py3 fastprogress bottleneck
 pip install openslide-bin openslide-python opencv-python shapely reportlab
-pip install fastapi uvicorn sqlalchemy psycopg2-binary python-dotenv python-multipart bcrypt authlib starlette httpx itsdangerous scikit-learn efficientnet_pytorch
+pip install fastapi uvicorn sqlalchemy psycopg2-binary python-dotenv python-multipart bcrypt authlib starlette httpx itsdangerous scikit-learn efficientnet_pytorch cloudinary
 ```
 
 > **Note:** `fastai==1.0.61` lists `pynvx` as a dependency on macOS — this package is abandoned and unavailable on PyPI. Always install fastai with `--no-deps` and add its other dependencies manually as shown above.
 
+> **Windows note:** `pip install -r requirements.txt` may fail while building `greenlet` (a SQLAlchemy dependency) with the error `Microsoft Visual C++ 14.0 or greater is required`. This happens when pip falls back to building from source instead of using a prebuilt wheel. Fix it by installing the prebuilt wheel first, then retrying:
+> ```powershell
+> pip install greenlet --only-binary :all:
+> pip install -r requirements.txt
+> ```
+> This has occurred on more than one fresh Windows install — try this before installing the full Visual C++ Build Tools.
+
 ### 4. Download the pretrained models
 
-The model weights (`.pkl` files) are tracked via **Git LFS**. If you don't have `git-lfs` installed:
+The model weights (`.pkl` files) are tracked via **Git LFS**.
 
+**macOS:**
 ```bash
-# macOS
 brew install git-lfs
-
-# then, from the repo root
 git lfs install
 git lfs pull
 ```
+
+**Windows:**
+Download and install Git LFS from [git-lfs.com](https://git-lfs.com/), then:
+```powershell
+git lfs install
+git lfs pull
+```
+
+If you cloned with `git clone --recurse-submodules` as in step 1, Git LFS may have already fetched the model files automatically during the clone — check step-4's verification below before re-running `git lfs pull`.
 
 This should populate `backend/model/` with:
 - `UNet_resnet18_512_2_sdata.pkl` (~165 MB)
@@ -100,8 +147,14 @@ This should populate `backend/model/` with:
 
 Verify they downloaded correctly (not just LFS pointer stubs):
 
+**macOS / Linux:**
 ```bash
 ls -lh backend/model/
+```
+
+**Windows (PowerShell):**
+```powershell
+Get-ChildItem backend\model\ | Select-Object Name, Length
 ```
 
 Both files should show their real sizes (MB), not a few hundred bytes. If they're tiny, `git lfs pull` didn't fetch the real content — re-run `git lfs install` and `git lfs pull` from the repo root.
@@ -112,17 +165,17 @@ Create a `.env` file inside `backend/`
 
 ### 6. Run the backend
 
+**macOS / Linux:**
 ```bash
 cd backend
 source venv/bin/activate   # if not already active
 python3 -m uvicorn main:app --reload
 ```
 
-or
-
-```bash
+**Windows (PowerShell):**
+```powershell
 cd backend
-source venv/bin/activate   # if not already active
+.\venv\Scripts\Activate.ps1   # if not already active
 python -m uvicorn main:app --reload
 ```
 
