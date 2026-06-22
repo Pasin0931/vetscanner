@@ -17,19 +17,84 @@ router = APIRouter(
 
 
 @router.post("/")
-async def upload(pet_id: int, type: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload(
+    pet_id: int,
+    type: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
     allowed = {"PROFILE", "MEDICAL_RECORD", "XRAY", "LAB_RESULT"}
+
     if type not in allowed:
-        raise HTTPException(status_code=400, detail=f"type must be one of {', '.join(allowed)}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"type must be one of {', '.join(allowed)}"
+        )
+
+
+    if type == "PROFILE":
+        old_profile = (
+            db.query(Images)
+            .filter(
+                Images.pet_id == pet_id,
+                Images.type == "PROFILE"
+            )
+            .first()
+        )
+
+        result = upload_image(file.file)
+
+        if old_profile:
+            delete_image(old_profile.public_id)
+
+            old_profile.image_url = result["url"]
+            old_profile.public_id = result["public_id"]
+
+            db.commit()
+            db.refresh(old_profile)
+
+            return {
+                "success": True,
+                "data": {
+                    "id": old_profile.id,
+                    "url": old_profile.image_url,
+                    "public_id": old_profile.public_id,
+                    "pet_id": old_profile.pet_id,
+                    "type": old_profile.type,
+                }
+            }
+
+        img = Images(
+            pet_id=pet_id,
+            image_url=result["url"],
+            public_id=result["public_id"],
+            type="PROFILE",
+        )
+
+        db.add(img)
+        db.commit()
+        db.refresh(img)
+
+        return {
+            "success": True,
+            "data": {
+                "id": img.id,
+                "url": img.image_url,
+                "public_id": img.public_id,
+                "pet_id": img.pet_id,
+                "type": img.type,
+            }
+        }
 
     result = upload_image(file.file)
 
     img = Images(
-        image_url=result.get("url"),
         pet_id=pet_id,
-        public_id=result.get("public_id"),
+        image_url=result["url"],
+        public_id=result["public_id"],
         type=type,
     )
+
     db.add(img)
     db.commit()
     db.refresh(img)
@@ -37,11 +102,11 @@ async def upload(pet_id: int, type: str, file: UploadFile = File(...), db: Sessi
     return {
         "success": True,
         "data": {
-            "url": result.get("url"),
-            "public_id": result.get("public_id"),
             "id": img.id,
-            "type": img.type,
+            "url": img.image_url,
+            "public_id": img.public_id,
             "pet_id": img.pet_id,
+            "type": img.type,
         }
     }
 
