@@ -14,14 +14,15 @@ from dotenv import load_dotenv
 from model import Users, Patients, Scan_Logs
 
 from scan_lib import process_slide, generate_pdf_report
-
 import shutil
 import tempfile
 import json
 
+from cloudinary_api import config
+from cloudinary_api.upload import router as upload_router
+
 load_dotenv()
 
-# print(base.metadata.tables.keys())
 
 base.metadata.create_all(bind=engine)
 
@@ -42,6 +43,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(upload_router)
+
 
 # Auth ========================================================================================================================================================
 app.include_router(

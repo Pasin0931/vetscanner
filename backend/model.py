@@ -27,8 +27,8 @@ class Patients(base):
     gender = Column(String, nullable=True)
     description = Column(Text, nullable=True)
     species = Column(String, nullable=False)
-    patient_portrait = Column(String, nullable=True) # image .png/.jpg
-    status = Column(String, nullable=True)           # online / offline
+    patient_portrait = Column(String, nullable=True)
+    status = Column(String, nullable=True)         
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -49,6 +49,17 @@ class Scan_Logs(base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     patient = relationship("Patients", back_populates="scan_logs")
+
+
+class Images(base):
+    __tablename__ = "images"
+
+    id = Column(Integer, primary_key=True, index=True)
+    image_url = Column(String, nullable=False)
+    pet_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    public_id = Column(String, nullable=False)
+    type = Column(String, nullable=False)  # PROFILE | MEDICAL_RECORD | XRAY | LAB_RESULT
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 class UserSession(base):
     __tablename__ = "sessions"
