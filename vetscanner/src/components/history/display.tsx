@@ -302,7 +302,7 @@ export default async function DisplayHistory() {
     const data = await getData()
     
     return (
-        <div className="flex-col justify-center items-start container px-6 w-235 py-10">            
+        <div className="flex flex-col justify-center items-start container px-6 py-10">            
             <h1 className="text-start p-10 text-3xl">History</h1>
             <DataTable columns={columns} data={data}/>
         </div>

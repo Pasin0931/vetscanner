@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 
 import Image from "next/image"
+import { LoaderCircle } from "lucide-react"
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -143,7 +144,7 @@ export default function DisplayPage() {
                 <Card className="mt-5 p-5 h-170 w-[95%] border-3 bg-white overflow-y-auto">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-screen">
-                            <h2 className="font-bold text-lg">Loading . . .</h2>
+                            <LoaderCircle className="animate-spin w-18 h-18"/>
                         </div>
                     ) : patients.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

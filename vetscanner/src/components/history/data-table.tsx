@@ -79,18 +79,22 @@ export function DataTable<TData, TValue> ({
     })
 
     return (
-        <div className="">
+        <div className="flex flex-col items w-[95%] px-5">
             {/* Search and Visibility */}
             <div className="flex items-center py-4">
                 {/* Search input */}                
-                <Input 
-                  placeholder="Filter patient or diagnosis type"
-                  value={globalFilter}
-                  onChange={ (event) => setGlobalFilter(event.target.value) }
-                //   value={(table.getColumn("patient_name")?.getFilterValue() as string) ?? ""}
-                //   onChange={ (event) => table.getColumn("patient_name")?.setFilterValue(event.target.value) }
-                  className="max-w-sm text-emerald-50 placeholder:text-emerald-50"            
-                />
+                <div className="w-[45%] bg-[#FFFFFF] rounded-lg">
+                    <Input 
+                        placeholder="Filter patient or diagnosis type"
+                        value={globalFilter}
+                        onChange={ (event) => setGlobalFilter(event.target.value) }
+                        //   value={(table.getColumn("patient_name")?.getFilterValue() as string) ?? ""}
+                        //   onChange={ (event) => table.getColumn("patient_name")?.setFilterValue(event.target.value) }
+                        className="w-full text-start"            
+                    />
+                    
+                </div>
+                
                 {/* Visible Ticker */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -126,15 +130,15 @@ export function DataTable<TData, TValue> ({
 
 
             {/* Data Table */}
-            <div className="overflow-hidden rounded-md bg-[#242424] border w-full h-full">
-                <ScrollArea className="h-[446px]">
+            <div className="overflow-hidden rounded-md bg-[#242424] w-full h-full">
+                <ScrollArea className="h-[446px] pr-3">
                     <Table>
                         <TableHeader className="bg-[#B1BB1E]">
                             {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id}>
+                                <TableRow key={headerGroup.id} className="">
                                     {headerGroup.headers.map((header) => {
                                         return (
-                                            <TableHead key={header.id} /*className="text-[#DDDDDD]"*/>
+                                            <TableHead key={header.id} className="text-lg ">
                                                 {header.isPlaceholder
                                                     ? null
                                                     : flexRender(
@@ -147,7 +151,7 @@ export function DataTable<TData, TValue> ({
                                 </TableRow>
                             ))}
                         </TableHeader>
-                        <TableBody className="bg-[#DDDDDD]">
+                        <TableBody className="bg-[#313131]">
                             {table.getRowModel().rows?.length ? (
                                 table.getRowModel().rows.map((row) => (
                                     <TableRow
@@ -155,7 +159,7 @@ export function DataTable<TData, TValue> ({
                                         data-state={row.getIsSelected() && "selected"}
                                     >
                                         {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id}>
+                                            <TableCell key={cell.id} className="text-lg text-[#B1BB1E]">
                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                             </TableCell>
                                         ))}
@@ -163,7 +167,7 @@ export function DataTable<TData, TValue> ({
                                 ))
                             ): (
                                 <TableRow>
-                                    <TableCell colSpan={columns.length} className="h-24 text-center">
+                                    <TableCell colSpan={columns.length} className="h-24 text-center text-lg text-emerald-50">
                                         No results 
                                     </TableCell>
                                 </TableRow>
