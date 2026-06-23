@@ -1,7 +1,9 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
+
+import { LoaderCircle } from "lucide-react"
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -47,10 +49,44 @@ export default function EditPage() {
     const [status, setStatus] = useState("")
     const [picture_url, setPictureUrl] = useState("")
 
+    const [pictureFile, setPictureFile] = useState<File | null>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
+
     const [loading, setLoading] = useState(false)
+    const [saving, setSaving] = useState(false)
+
+    const handlePictureSelect = (selected: File | null) => {
+        if (!selected) return
+        setPictureFile(selected)
+        setPictureUrl(URL.createObjectURL(selected))
+    }
 
     const handle_save = async () => {
+        setSaving(true)
         try {
+            let finalPictureUrl = picture_url
+
+            if (pictureFile) {
+                const formData = new FormData()
+                formData.append("file", pictureFile)
+
+                const uploadRes = await fetch(
+                    `${process.env.NEXT_PUBLIC_API_URL}/upload/?pet_id=${id}&type=PROFILE`,
+                    {
+                        method: "POST",
+                        credentials: "include",
+                        body: formData
+                    }
+                )
+
+                if (uploadRes.ok) {
+                    const uploadData = await uploadRes.json()
+                    finalPictureUrl = uploadData.data.url
+                } else {
+                    alert("Picture upload failed, saving other changes only.")
+                }
+            }
+
             const params = new URLSearchParams({
                 name_: name,
                 breed_: breed,
@@ -59,7 +95,7 @@ export default function EditPage() {
                 gender_: gender,
                 description_: description,
                 species_: species,
-                potrait_: picture_url,
+                potrait_: finalPictureUrl,
                 status_: status
             })
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients/${id}?${params}`, {
@@ -76,6 +112,8 @@ export default function EditPage() {
         } catch (err) {
             console.error("error --> ", err)
             alert("Error while saving patient")
+        } finally {
+            setSaving(false)
         }
     }
 
@@ -179,18 +217,30 @@ export default function EditPage() {
 
                     <div className="flex flex-col gap-1">
                         <label className="font-semibold text-sm">Picture</label>
-                        <div className="flex items-center justify-center h-62 bg-gray-100 rounded-lg border-2 border-dashed cursor-pointer">
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center justify-center h-62 bg-gray-100 rounded-lg border-2 border-dashed cursor-pointer overflow-hidden hover:bg-gray-200 transition"
+                        >
                             {picture_url ? (
                                 <img src={picture_url} alt="preview" className="h-full object-contain rounded-lg" />
                             ) : (
                                 <p className="font-bold text-gray-500">Upload files</p>
                             )}
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handlePictureSelect(e.target.files?.[0] ?? null)}
+                            />
                         </div>
                     </div>
 
                     <div className="flex flex-row gap-3 self-center mt-4">
                         <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
-                        <Button className="bg-black" onClick={handle_save}>Save</Button>
+                        <Button className="bg-black" onClick={handle_save} disabled={saving}>
+                            {saving ? <LoaderCircle className="animate-spin w-4 h-4" /> : "Save"}
+                        </Button>
                     </div>
                 </div>
             </Card>

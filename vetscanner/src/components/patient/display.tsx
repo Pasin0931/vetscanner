@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 
 import { useRouter } from "next/navigation"
@@ -36,6 +36,8 @@ type Patient = {
     created_at: string
 }
 
+const DEFAULT_PORTRAIT = "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80"
+
 export default function DisplayPage() {
     const router = useRouter()
 
@@ -52,9 +54,13 @@ export default function DisplayPage() {
     const [weight, setWeight] = useState<number>(0)
     const [gender, setGender] = useState("")
     const [status, setStatus] = useState("")
-    const [potrait, setPotrait] = useState("")
+
+    const [pictureFile, setPictureFile] = useState<File | null>(null)
+    const [picturePreviewUrl, setPicturePreviewUrl] = useState<string>("")
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
     const [loading, setLoading] = useState(false)
+    const [registering, setRegistering] = useState(false)
 
     const fetch_patients = async () => {
         setLoading(true)
@@ -71,10 +77,31 @@ export default function DisplayPage() {
         }
     }
 
-    const create_patient = async () => {
-        try {
-            const this_potrait = potrait.trim() === "" ? "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80" : potrait
+    const handlePictureSelect = (selected: File | null) => {
+        if (!selected) {
+            return
+        }
+        setPictureFile(selected)
+        setPicturePreviewUrl(URL.createObjectURL(selected))
+    }
 
+    // const resetForm = () => {
+    //     setName("")
+    //     setDescription("")
+    //     setSpecies("")
+    //     setBreed("")
+    //     setAge(0)
+    //     setWeight(0)
+    //     setGender("")
+    //     setStatus("")
+    //     setPictureFile(null)
+    //     setPicturePreviewUrl("")
+    //     if (fileInputRef.current) fileInputRef.current.value = ""
+    // }
+
+    const create_patient = async () => {
+        setRegistering(true)
+        try {
             const params = new URLSearchParams({
                 name_: name,
                 breed_: breed,
@@ -83,19 +110,61 @@ export default function DisplayPage() {
                 gender_: gender,
                 description_: description,
                 species_: species,
-                potrait_: this_potrait,
+                potrait_: DEFAULT_PORTRAIT,
                 status_: status
             })
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients?${params}`, {
                 method: "POST",
                 credentials: "include"
             })
-            if (res.ok) {
-                fetch_patients()
-                alert("Patient registered !")
+
+            if (!res.ok) {
+                alert("Error while registering patient")
+                return
             }
+
+            const created = await res.json()
+            const newPatientId = created.id
+
+            if (pictureFile && newPatientId) {
+                const formData = new FormData()
+                formData.append("file", pictureFile)
+
+                const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/?pet_id=${newPatientId}&type=PROFILE`,
+                    {
+                        method: "POST",
+                        credentials: "include",
+                        body: formData
+                    }
+                )
+
+                if (uploadRes.ok) {
+                    const uploadData = await uploadRes.json()
+                    const uploadedUrl = uploadData.data.url
+
+                    const patchParams = new URLSearchParams({
+                        name_: name,
+                        breed_: breed,
+                        age_: age.toString(),
+                        weight_: weight.toString(),
+                        gender_: gender,
+                        description_: description,
+                        species_: species,
+                        potrait_: uploadedUrl,
+                        status_: status
+                    })
+                    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients/${newPatientId}?${patchParams}`, { method: "PUT", credentials: "include" })
+                } else {
+                    alert("Patient registered, but the picture upload failed.")
+                }
+            }
+
+            fetch_patients()
+            alert("Patient registered !")
         } catch (err) {
             alert("Error while posting new patient")
+        } finally {
+            setRegistering(false)
         }
     }
 
@@ -144,7 +213,7 @@ export default function DisplayPage() {
                 <Card className="mt-5 p-5 h-170 w-[95%] border-3 bg-white overflow-y-auto">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-screen">
-                            <LoaderCircle className="animate-spin w-18 h-18"/>
+                            <LoaderCircle className="animate-spin w-18 h-18" />
                         </div>
                     ) : patients.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -183,27 +252,27 @@ export default function DisplayPage() {
 
                         <div className="flex flex-col gap-1">
                             <label className="font-semibold text-sm">Name</label>
-                            <Input placeholder="Enter name" onChange={(e) => setName(e.target.value)} />
+                            <Input placeholder="Enter name" value={name} onChange={(e) => setName(e.target.value)} />
                         </div>
 
                         <div className="flex flex-col gap-1">
                             <label className="font-semibold text-sm">Description</label>
-                            <Input placeholder="Enter description" onChange={(e) => setDescription(e.target.value)} />
+                            <Input placeholder="Enter description" value={description} onChange={(e) => setDescription(e.target.value)} />
                         </div>
 
                         <div className="flex flex-col gap-1">
                             <label className="font-semibold text-sm">Breed</label>
-                            <Input placeholder="Enter breed" onChange={(e) => setBreed(e.target.value)} />
+                            <Input placeholder="Enter breed" value={breed} onChange={(e) => setBreed(e.target.value)} />
                         </div>
 
                         <div className="flex flex-row gap-4">
                             <div className="flex flex-col gap-1 w-full">
                                 <label className="font-semibold text-sm">Age</label>
-                                <Input placeholder="Enter age" type="number" onChange={(e) => setAge(Number(e.target.value))} />
+                                <Input placeholder="Enter age" type="number" value={age} onChange={(e) => setAge(Number(e.target.value))} />
                             </div>
                             <div className="flex flex-col gap-1 w-full">
                                 <label className="font-semibold text-sm">Weight (kg)</label>
-                                <Input placeholder="Enter weight" type="number" onChange={(e) => setWeight(Number(e.target.value))} />
+                                <Input placeholder="Enter weight" type="number" value={weight} onChange={(e) => setWeight(Number(e.target.value))} />
                             </div>
                         </div>
 
@@ -256,12 +325,35 @@ export default function DisplayPage() {
 
                         <div className="flex flex-col gap-1">
                             <label className="font-semibold text-sm">Picture</label>
-                            <div className="flex items-center justify-center h-62 bg-gray-100 rounded-lg border-2 border-dashed cursor-pointer">
-                                <p className="font-bold text-gray-500">Upload files</p>
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex items-center justify-center h-62 bg-gray-100 rounded-lg border-2 border-dashed cursor-pointer overflow-hidden hover:bg-gray-200 transition"
+                            >
+                                {picturePreviewUrl ? (
+                                    <img src={picturePreviewUrl} alt="preview" className="h-full object-contain" />
+                                ) : (
+                                    <p className="font-bold text-gray-500">Upload files</p>
+                                )}
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => handlePictureSelect(e.target.files?.[0] ?? null)}
+                                />
                             </div>
+                            {pictureFile && (
+                                <p className="text-gray-500 text-xs">{pictureFile.name}</p>
+                            )}
                         </div>
 
-                        <Button className="mt-4 w-25 self-center" onClick={() => create_patient()}>Register</Button>
+                        <Button
+                            className="mt-4 w-25 self-center"
+                            onClick={() => create_patient()}
+                            disabled={registering}
+                        >
+                            {registering ? <LoaderCircle className="animate-spin w-4 h-4" /> : "Register"}
+                        </Button>
                     </div>
                 </Card>
             )}

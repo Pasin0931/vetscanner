@@ -11,7 +11,7 @@ from auth.auth_dependency import get_current_user
 import os
 from dotenv import load_dotenv
 
-from model import Users, Patients, Scan_Logs
+from model import Users, Patients, Scan_Logs, Images
 
 from scan_lib import process_slide, generate_pdf_report
 import shutil
@@ -20,6 +20,7 @@ import json
 
 from cloudinary_api import config
 from cloudinary_api.upload import router as upload_router
+from cloudinary_api.service import delete_image, upload_pdf
 
 load_dotenv()
 
@@ -73,7 +74,7 @@ app.include_router(
 # Patients ========================================================================================================================================================
 @app.get("/patients")
 def get_all_patients(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Patients).filter(Patients.user_id == current_user.id).all()
+    return db.query(Patients).filter(Patients.user_id == current_user.id).order_by(Patients.id).all()
 
 @app.get("/patients/{patient_id}")
 def get_patient(patient_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
@@ -87,7 +88,7 @@ def get_patient(patient_id: int, current_user=Depends(get_current_user), db: Ses
 
 @app.post("/patients")
 def create_patient(name_: str, breed_: str, age_: int, weight_: float, gender_: str, description_: str, species_: str, potrait_: str, status_: str, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    db.add(Patients(
+    new_patient = Patients(
         name=name_,
         breed=breed_,
         age=age_,
@@ -98,9 +99,11 @@ def create_patient(name_: str, breed_: str, age_: int, weight_: float, gender_: 
         patient_portrait=potrait_,
         status=status_,
         user_id=current_user.id
-    ))
+    )
+    db.add(new_patient)
     db.commit()
-    return {"message": "patients added to db"}
+    db.refresh(new_patient)
+    return {"message": "patients added to db", "id": new_patient.id}
 
 @app.put("/patients/{patient_id}")
 def edit_patient(name_: str, breed_: str, age_: int, weight_: float, gender_: str, description_: str, species_: str, potrait_: str, status_: str, patient_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
@@ -124,18 +127,34 @@ def delete_patient(patient_id: int, current_user=Depends(get_current_user), db: 
     this_ = db.query(Patients).filter(Patients.user_id == current_user.id, Patients.id == patient_id).first()
     if not this_:
         raise HTTPException(status_code=404, detail="Patient not found")
-    
+
+    images = db.query(Images).filter(Images.pet_id == patient_id).all()
+    for img in images:
+        delete_image(img.public_id)
+        db.delete(img)
+
+    db.query(Scan_Logs).filter(Scan_Logs.patient_id == patient_id).delete()
+
     db.delete(this_)
     db.commit()
     return {"message": "patient deleted"}
 
 @app.delete("/patients")
 def nuke_patients(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    this_ = db.query(Patients).all()
+    this_ = db.query(Patients).filter(Patients.user_id == current_user.id).all()
     if not this_:
         raise HTTPException(status_code=404, detail="No patients")
+
+    patient_ids = [i.id for i in this_]
+
+    images = db.query(Images).filter(Images.pet_id.in_(patient_ids)).all()
+    for img in images:
+        delete_image(img.public_id)
+
+    db.query(Images).filter(Images.pet_id.in_(patient_ids)).delete(synchronize_session=False)
+    db.query(Scan_Logs).filter(Scan_Logs.patient_id.in_(patient_ids)).delete(synchronize_session=False)
+    db.query(Patients).filter(Patients.user_id == current_user.id).delete(synchronize_session=False)
     
-    db.query(Patients).delete()
     db.execute(text("ALTER SEQUENCE patients_id_seq RESTART WITH 1"))
     db.commit()
     return {"message": "patients nuked"}
@@ -143,7 +162,14 @@ def nuke_patients(current_user=Depends(get_current_user), db: Session = Depends(
 # History Logs ========================================================================================================================================================
 @app.get("/histories")
 def get_all_logs(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
-    return db.query(Scan_Logs).filter(Patients.user_id == current_user.id).all()
+    logs = (
+        db.query(Scan_Logs)
+        .join(Patients, Scan_Logs.patient_id == Patients.id)
+        .filter(Patients.user_id == current_user.id)
+        .all()
+    )
+
+    return logs
 
 @app.get("/histories/{history_id}")
 def get_history(history_id: int, current_user=Depends(get_current_user)):
@@ -218,13 +244,17 @@ async def scan_slide(file: UploadFile = File(...), patient_id: int = Form(...), 
         # Its never written to disk or saved in the database, ( IMPLEMENT )
         pdf_bytes = generate_pdf_report(result, patient.name, scan_log.id)
  
-        filename = f"scan_report_{patient.name}_{scan_log.id}.pdf"
+        filename = f"scan_report_{patient.name}_{scan_log.id}"
+ 
+        pdf_upload = upload_pdf(pdf_bytes, filename)
+        scan_log.pdf_report = pdf_upload["url"]
+        db.commit()
  
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
             headers={
-                "Content-Disposition": f'attachment; filename="{filename}"'
+                "Content-Disposition": f'attachment; filename="{filename}.pdf"'
             }
         )
  
