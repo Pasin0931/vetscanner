@@ -20,7 +20,7 @@ import json
 
 from cloudinary_api import config
 from cloudinary_api.upload import router as upload_router
-from cloudinary_api.service import delete_image, upload_pdf
+from cloudinary_api.service import delete_image, upload_pdf, delete_pdf
 
 load_dotenv()
 
@@ -169,7 +169,12 @@ def get_all_logs(current_user=Depends(get_current_user), db: Session = Depends(g
         .all()
     )
 
-    return logs
+    return [{"id": log.id,
+             "patient_id": log.patient_id,
+             "patient": log.patient.name,
+             "result": json.loads(log.result),
+             "pdf_report": log.pdf_report,
+             "created_at": log.created_at } for log in logs]
 
 @app.get("/histories/{history_id}")
 def get_history(history_id: int, current_user=Depends(get_current_user)):
@@ -183,10 +188,61 @@ def get_patient_histories(patient_id: int, current_user=Depends(get_current_user
 def upload_scan(current_user=Depends(get_current_user)):
     return {"message": f"Upload scan into db"}
 
-# admin authority (delete later when finished)
+@app.delete("/histories/{history_id}")
+def delete_history(history_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    log = (
+        db.query(Scan_Logs)
+        .join(Patients, Scan_Logs.patient_id == Patients.id)
+        .filter(Patients.user_id == current_user.id, Scan_Logs.id == history_id)
+        .first()
+    )
+
+    if not log:
+        raise HTTPException(status_code=404, detail="Current history not found")
+
+    # Cloudinary Deletion        
+    if log.pdf_report:
+        try: 
+            public_id = log.pdf_report.split("/upload/")[1].split("/", 1)[1]
+            public_id = "vetscanner-reports/" + public_id.rsplit(".", 1)[0]
+            delete_pdf(public_id)
+        except:
+            raise HTTPException(status_code=404, detail="Failed to retrieve files from cloudinary")                    
+
+    # Log Deletion
+    db.delete(log)
+    db.commit()
+
+    return {"message": "patient deleted"}
+
 @app.delete("/histories")
-def nuke_scan(current_user=Depends(get_current_user)):
-    return {"message": f"Nuke history db"}
+def nuke_history(current_user=Depends(get_current_user), db: Session = Depends(get_db)):    
+    logs = (
+        db.query(Scan_Logs)
+        .join(Patients, Scan_Logs.patient_id == Patients.id)
+        .filter(Patients.user_id == current_user.id)
+        .all()
+    )
+
+    if not logs:
+        raise HTTPException(status_code=404, detail="No past history")
+    
+    # Cloudinary Deletion    
+    for i in logs:
+        if i.pdf_report:
+            try: 
+                public_id = i.pdf_report.split("/upload/")[1].split("/", 1)[1]
+                public_id = "vetscanner-reports/" + public_id.rsplit(".", 1)[0]
+                delete_pdf(public_id)
+            except:
+                raise HTTPException(status_code=404, detail="Failed to retrieve files from cloudinary")                    
+
+    # Logs Deletion
+    log_ids = [i.id for i in logs]
+    db.query(Scan_Logs).filter( Scan_Logs.id.in_(log_ids)).delete(synchronize_session=False)
+    db.commit()
+
+    return {"message": f"Nuke history logs db"}
 
 # Reports load process ============================================================================
 @app.post("/scan/model")
@@ -233,7 +289,7 @@ async def scan_slide(file: UploadFile = File(...), patient_id: int = Form(...), 
             "tumor_detected": result["tumor_detected"],
             "diagnosis": result["diagnosis"],
             "tumor_tile_count": result["tumor_tile_count"],
-            "vote_breakdown": result.get("vote_breakdown"),
+            # "vote_breakdown": result.get("vote_breakdown"),
             "message": result["message"],
         })
         scan_log.confidence_score = result["confidence_score"]

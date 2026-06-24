@@ -1,310 +1,45 @@
-import { columns, Catalogue } from "./columns"
+"use client"
+
+import { Card } from "../ui/card"
+
+import { columns, Catalogue, History_fetch } from "./columns"
 import { DataTable } from "./data-table"
 
-async function getData(): Promise<Catalogue[]> {
-    return [
-        {
-            id: 1,
-            diagnose: "cancer",
-            patient_id: 69,
-            patient_name: "tung tung",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        },
-        {
-            id: 1,
-            diagnose: "cancer",
-            patient_id: 69,
-            patient_name: "tung tung",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "cancer",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "cancer",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "cancer",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "fractured",
-            patient_id: 69,
-            patient_name: "Man man",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "dna",
-            patient_id: 69,
-            patient_name: "Miguel",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "dna",
-            patient_id: 69,
-            patient_name: "yayyya",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-        ,
-        {
-            id: 1,
-            diagnose: "dna",
-            patient_id: 69,
-            patient_name: "yayyya",
-            xray_image: "bo man",
-            result: "ye", // May convert to PDF
-            confidence_score: 0,
-            status: "unalive",
-            pdf_report: "funeral",
-            date: "Jun 09 2026",
-            time: "13:18:51"
-        }
-    ]
-}
+import { useEffect, useState } from "react"
 
-export default async function DisplayHistory() {
-    const data = await getData()
+export default function DisplayHistory() {
+    const [historyLog, setHistoryLog] = useState<History_fetch[]>([])  
+    
+    const [loading, setLoading] = useState(false)
+
+    const Fetch_history = async () => {
+        setLoading(true)
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/histories`, {
+                credentials: "include"
+            })
+            const data = await res.json()
+            setHistoryLog(data)
+
+        } catch (err) {
+            alert("Error while fetching history")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        Fetch_history()
+    }, [])
+    
+    // const data = await DataFetching()
     
     return (
-        <div className="flex flex-col justify-center items-start container px-6 py-10">            
-            <h1 className="text-start p-10 text-3xl">History</h1>
-            <DataTable columns={columns} data={data}/>
+        <div className="flex flex-col justify-center items-start container px-6">    
+            <Card className="flex flex-col justify-center h-full w-full border-3 bg-white">
+                <h1 className="text-start pl-12 pt-5 font-bold text-5xl">History</h1>
+                <DataTable columns={columns} data={historyLog} onRefresh={Fetch_history} loading={loading}/>                
+            </Card>        
         </div>
     )
 }
