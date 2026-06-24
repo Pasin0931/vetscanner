@@ -62,7 +62,7 @@ export default function RootLayout({ children }: {
 
               <div className="flex flex-row items-center gap-3 pt-5">
                 <WhiteCircle />
-                <h2>Smart X-Ray analytic</h2>
+                <h2>Smart Histopathology</h2>
               </div>
 
               <div className="flex flex-row items-center gap-3 pt-5">

@@ -25,13 +25,13 @@ export default function Home() {
         </p>
 
         <div className="flex gap-3 mt-2">
-          <Button onClick={() => router.push("/authentication?tab=Login")}>
+          <Button onClick={() => router.push("/authentication?tab=Login")} className="w-22">
             Login
           </Button>
 
           <Button
             variant="outline"
-            onClick={() => router.push("/authentication?tab=Register")}
+            onClick={() => router.push("/authentication?tab=Register")} className="w-22"
           >
             Register
           </Button>

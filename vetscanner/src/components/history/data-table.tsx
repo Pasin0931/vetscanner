@@ -111,6 +111,7 @@ export function DataTable<TData, TValue> ({
                 {/* Delete all */}
                 <Button 
                     className="text-base ml-[40%] mr-5 px-5 rounded-lg"
+                    variant="destructive"
                     onClick={async () => {
                                 try{
                                     if (!confirm("approve")) { return }
@@ -172,12 +173,12 @@ export function DataTable<TData, TValue> ({
 
 
             {/* Data Table */}
-            <div className="overflow-hidden rounded-md bg-[#D9D9D9] w-full h-full border border-3">
+            <div className="overflow-hidden rounded-md w-full h-full border border-3">
                 <ScrollArea className="h-[446px] pr-3">
                     <Table>
-                        <TableHeader className="bg-[#B1BB1E]">
+                        <TableHeader className="bg-[#D9D9D9]">
                             {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id} className="">
+                                <TableRow key={headerGroup.id} className=" bg-[#D9D9D9]">
                                     {headerGroup.headers.map((header) => {
                                         return (
                                             <TableHead key={header.id} className="text-lg ">

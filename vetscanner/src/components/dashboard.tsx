@@ -66,6 +66,16 @@ const timelineChartConfig = {
   },
 } satisfies ChartConfig
 
+const TUMOR_TYPES = [
+  "Melanoma",
+  "Plasmacytoma",
+  "Mast Cell Tumor",
+  "Peripheral Nerve Sheath Tumor",
+  "Squamous Cell Carcinoma",
+  "Trichoblastoma",
+  "Histiocytoma",
+]
+
 export default function Dashboard() {
 
   const [data, setData] = useState<DataProps[]>([])
@@ -88,22 +98,34 @@ export default function Dashboard() {
   const totalScans = data.length
   const tumorsDetected = data.filter((log) => log.result.tumor_detected).length
 
-  const tumorPositiveScores = data
-    .filter((log) => log.result.tumor_detected && log.confidence_score != null)
+  const tumorPositiveLogs = data.filter((log) => log.result.tumor_detected)
+
+  const tumorPositiveScores = tumorPositiveLogs
+    .filter((log) => log.confidence_score != null)
     .map((log) => log.confidence_score as number)
   const averageConfidence = tumorPositiveScores.length > 0
     ? Math.round((tumorPositiveScores.reduce((sum, score) => sum + score, 0) / tumorPositiveScores.length) * 100)
     : null
 
+  const averageFlaggedTiles = tumorPositiveLogs.length > 0
+    ? Math.round(
+        tumorPositiveLogs.reduce((sum, log) => sum + log.result.tumor_tile_count, 0) / tumorPositiveLogs.length
+      )
+    : null
+
   const diagnosisCounts: Record<string, number> = {}
-  for (const log of data) {
-    if (log.result.tumor_detected && log.result.diagnosis) {
+  for (const type of TUMOR_TYPES) {
+    diagnosisCounts[type] = 0
+  }
+  for (const log of tumorPositiveLogs) {
+    if (log.result.diagnosis) {
       diagnosisCounts[log.result.diagnosis] = (diagnosisCounts[log.result.diagnosis] ?? 0) + 1
     }
   }
-  const diagnosisChartData = Object.entries(diagnosisCounts)
-    .map(([diagnosis, count]) => ({ diagnosis, count }))
-    .sort((a, b) => b.count - a.count)
+  const diagnosisChartData = TUMOR_TYPES.map((diagnosis) => ({
+    diagnosis,
+    count: diagnosisCounts[diagnosis],
+  }))
 
   const scansByDate: Record<string, number> = {}
   for (const log of data) {
@@ -130,14 +152,14 @@ export default function Dashboard() {
             <StatCard label="Total Scans" value={"--"} />
             <StatCard label="Tumors Detected" value={"--"} />
             <StatCard label="Avg. Confidence" value={"--"} />
-            <StatCard label="Tumors Detected" value={"--"} />
+            <StatCard label="Avg. Flagged Tiles" value={"--"} />
           </div>
         ) : (
           <div className="flex flex-row justify-center items-center gap-4 w-full">
             <StatCard label="Total Scans" value={totalScans} />
             <StatCard label="Tumors Detected" value={tumorsDetected} />
             <StatCard label="Avg. Confidence" value={averageConfidence !== null ? `${averageConfidence}%` : "--"} />
-            <StatCard label="Tumors Detected" value={tumorsDetected} />
+            <StatCard label="Avg. Flagged Tiles" value={averageFlaggedTiles !== null ? averageFlaggedTiles : "--"} />
           </div>
         )}
       </Card>

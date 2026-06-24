@@ -173,6 +173,7 @@ def get_all_logs(current_user=Depends(get_current_user), db: Session = Depends(g
              "patient_id": log.patient_id,
              "patient": log.patient.name,
              "result": json.loads(log.result),
+             "confidence_score": log.confidence_score,
              "pdf_report": log.pdf_report,
              "created_at": log.created_at } for log in logs]
 

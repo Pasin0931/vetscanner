@@ -49,6 +49,21 @@ export type Result = {
     message: string
 }
 
+function formatTimestamp(value: string): string {
+    const date = new Date(value)
+    if (isNaN(date.getTime())) return value
+
+    const pad = (n: number) => n.toString().padStart(2, "0")
+
+    const year = date.getFullYear()
+    const month = pad(date.getMonth() + 1)
+    const day = pad(date.getDate())
+    const hours = pad(date.getHours())
+    const minutes = pad(date.getMinutes())
+
+    return `${day}-${month}-${year} ${hours}:${minutes}`
+}
+
 export const columns: ColumnDef<History_fetch>[] = [
     {
         accessorKey: "id",
@@ -79,7 +94,10 @@ export const columns: ColumnDef<History_fetch>[] = [
     },  
     {
         accessorKey: "created_at",
-        header: "Time Stamp"
+        header: "Time Stamp",
+        cell: ({row}) => {
+            return <div>{formatTimestamp(row.original.created_at)}</div>
+        }
     },
     {
         id:"actions",

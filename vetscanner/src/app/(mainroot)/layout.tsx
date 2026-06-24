@@ -1,18 +1,29 @@
-
 "use client";
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button";
+import { ScanProvider, useScanContext } from "@/context/scan_content"
 
-export default function RootLayout({ children }: {
-  children: React.ReactNode
-}) {
+function LayoutContent({ children }: { children: React.ReactNode }) {
 
   const router = useRouter()
+  const { isScanning } = useScanContext()
+
+  const guardedNavigate = (path: string) => {
+    if (isScanning) {
+      alert("A scan is currently in progress. Please wait for it to finish before leaving this page.")
+      return
+    }
+    router.push(path)
+  }
 
   const handle_logout = async () => {
+    if (isScanning) {
+      alert("A scan is currently in progress. Please wait for it to finish before logging out.")
+      return
+    }
     try {
       if (confirm("Logout ?")) {
         await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include" })
@@ -54,7 +65,7 @@ export default function RootLayout({ children }: {
                         transition duration-300 ease-in-out                        
                         p-8
                         "
-                onClick={() => router.push("/dashboard")}>
+                onClick={() => guardedNavigate("/dashboard")}>
                 Dashboard
               </Button>
 
@@ -65,7 +76,7 @@ export default function RootLayout({ children }: {
                         transition duration-300 ease-in-out                        
                         p-8
                         "
-                onClick={() => router.push("/patient")}>
+                onClick={() => guardedNavigate("/patient")}>
                 Patient
               </Button>
 
@@ -76,7 +87,7 @@ export default function RootLayout({ children }: {
                         transition duration-300 ease-in-out                        
                         p-8                        
                         "
-                onClick={() => router.push("/scan")}>
+                onClick={() => guardedNavigate("/scan")}>
                 Scan
               </Button>
 
@@ -87,7 +98,7 @@ export default function RootLayout({ children }: {
                         transition duration-300 ease-in-out
                         p-8                        
                         "
-                onClick={() => router.push("/history")}>
+                onClick={() => guardedNavigate("/history")}>
                 History
               </Button>
 
@@ -98,7 +109,7 @@ export default function RootLayout({ children }: {
                         transition duration-300 ease-in-out
                         p-8                        
                         "
-                onClick={() => router.push("/about")}>
+                onClick={() => guardedNavigate("/about")}>
                 About us
               </Button>
             </div>
@@ -119,5 +130,15 @@ export default function RootLayout({ children }: {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function RootLayout({ children }: {
+  children: React.ReactNode
+}) {
+  return (
+    <ScanProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </ScanProvider>
   )
 }

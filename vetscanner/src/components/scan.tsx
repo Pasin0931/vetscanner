@@ -13,6 +13,8 @@ import {
     ComboboxList,
 } from "@/components/ui/combobox"
 
+import { useScanContext } from "@/context/scan_content"
+
 type Patient = {
     id: number
     name: string
@@ -47,6 +49,8 @@ export default function ScanPage() {
     const fileInputRef = useRef<HTMLInputElement>(null)
     const xhrRef = useRef<XMLHttpRequest | null>(null)
 
+    const { setIsScanning } = useScanContext()
+
     const fetch_patients = async () => {
         setLoadingPatients(true)
         try {
@@ -64,6 +68,11 @@ export default function ScanPage() {
 
     useEffect(() => {
         fetch_patients()
+    }, [])
+
+    // Clear the navigation block if the user leaves this page some other way
+    useEffect(() => {
+        return () => setIsScanning(false)
     }, [])
 
     const patientLabels = patients.map((p) => p.name)
@@ -124,6 +133,7 @@ export default function ScanPage() {
         setStatus("uploading")
         setProgress(0)
         setErrorMessage("")
+        setIsScanning(true)
 
         const formData = new FormData()
         formData.append("file", file)
@@ -169,11 +179,13 @@ export default function ScanPage() {
                 setErrorMessage(`Scan failed (status ${xhr.status}). Please try again.`)
                 setStatus("error")
             }
+            setIsScanning(false)
         }
 
         xhr.onerror = () => {
             setErrorMessage("Network error. Check your connection and try again.")
             setStatus("error")
+            setIsScanning(false)
         }
 
         xhr.open("POST", `${process.env.NEXT_PUBLIC_API_URL}/scan/model`)
@@ -185,6 +197,7 @@ export default function ScanPage() {
         xhrRef.current?.abort()
         setStatus("idle")
         setProgress(0)
+        setIsScanning(false)
     }
 
     const handleReset = () => {
@@ -193,6 +206,7 @@ export default function ScanPage() {
         setProgress(0)
         setErrorMessage("")
         setResult(null)
+        setIsScanning(false)
         if (fileInputRef.current) fileInputRef.current.value = ""
     }
 
