@@ -35,6 +35,10 @@ async def google_login(
         "google_callback"
     )
 
+    remember = request.query_params.get("remember_me")
+    if remember == "true":
+        redirect_uri = f"{redirect_uri}?remember_me=true"
+
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
@@ -57,18 +61,30 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
         provider_id=userinfo["sub"]
     )
 
-    session_id = create_session(db, user.id)
+    remember = request.query_params.get("remember_me") == "true"
+    expire_days = 30 if remember else SESSION_EXPIRE_DAYS
+
+    session_id = create_session(db, user.id, expire_days=expire_days)
 
     response = RedirectResponse(url=FRONTEND_URL)
 
-    response.set_cookie(
-        key="session_id",
-        value=session_id,
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        max_age=604800
-    )
+    if remember:
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            max_age=2592000
+        )
+    else:
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=True,
+            secure=False,
+            samesite="lax"
+        )
 
     return response
 
@@ -137,15 +153,23 @@ def login(
         }
     )
 
-    max_age = 2592000 if body.remember_me else 604800
-    response.set_cookie(
-        key="session_id",
-        value=session_id,
-        httponly=True,
-        secure=False,
-        samesite="lax",
-        max_age=max_age
-    )
+    if body.remember_me:
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            max_age=2592000
+        )
+    else:
+        response.set_cookie(
+            key="session_id",
+            value=session_id,
+            httponly=True,
+            secure=False,
+            samesite="lax"
+        )
 
     return response
 

@@ -47,7 +47,8 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
     }
 
     const handle_oauth = async () => {
-        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/login`
+        const rememberParam = rememberMe ? "?remember_me=true" : ""
+        window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google/login${rememberParam}`
         // router.push("/authentication?tab=Login")
     }
 
