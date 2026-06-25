@@ -7,7 +7,7 @@ from model import Users, UserSession
 
 load_dotenv()
 
-SESSION_EXPIRE_DAYS = int(os.getenv("SESSION_EXPIRE_DAYS", 7))
+SESSION_EXPIRE_DAYS = int(os.getenv("SESSION_EXPIRE_DAYS", 1))
 
 
 def get_or_create_user(db: Session,email: str,name: str,provider_id: str):
@@ -34,14 +34,14 @@ def get_or_create_user(db: Session,email: str,name: str,provider_id: str):
     return user
 
 
-def create_session(db: Session, user_id: str):
+def create_session(db: Session, user_id: str, expire_days: int = SESSION_EXPIRE_DAYS):
     session_id = secrets.token_urlsafe(32)
 
     session = UserSession(
         id=session_id,
         user_id=user_id,
         expires_at=datetime.utcnow()
-        + timedelta(days=SESSION_EXPIRE_DAYS)
+        + timedelta(days=expire_days)
     )
 
     db.add(session)

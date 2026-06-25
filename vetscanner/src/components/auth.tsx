@@ -27,7 +27,7 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
     const router = useRouter();
     const handle_login_bt = async () => {
         try {
-            await login(email, password)
+            await login(email, password, rememberMe)
             alert("Login success")
             // location.reload()
             router.push("/dashboard");

@@ -5,7 +5,7 @@ import { useState } from "react"
 export function useAuth() {
     const [loading, setLoading] = useState(false)
 
-    const login = async (email: string, password: string) => {
+    const login = async (email: string, password: string, rememberMe = false) => {
         setLoading(true)
 
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
@@ -14,7 +14,7 @@ export function useAuth() {
                 "Content-Type": "application/json"
             },
             credentials: "include",
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, remember_me: rememberMe })
         })
 
         const data = await res.json()

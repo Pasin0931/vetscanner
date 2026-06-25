@@ -11,7 +11,8 @@ from auth.oauth import oauth
 from auth.auth_service import (
     get_or_create_user,
     create_session,
-    delete_session
+    delete_session,
+    SESSION_EXPIRE_DAYS
 )
 from auth.auth_dependency import get_current_user
 from model import RegisterRequest, LoginRequest, Users as User
@@ -127,7 +128,8 @@ def login(
     if not verify_password(body.password, user.password): 
         raise HTTPException(status_code=401, detail="invalid credentials")
 
-    session_id = create_session(db, user.id)
+    expire_days = 30 if body.remember_me else SESSION_EXPIRE_DAYS
+    session_id = create_session(db, user.id, expire_days=expire_days)
 
     response = JSONResponse(
         {
@@ -135,13 +137,14 @@ def login(
         }
     )
 
+    max_age = 2592000 if body.remember_me else 604800
     response.set_cookie(
         key="session_id",
         value=session_id,
         httponly=True,
         secure=False,
         samesite="lax",
-        max_age=604800
+        max_age=max_age
     )
 
     return response
