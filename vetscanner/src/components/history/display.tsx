@@ -35,7 +35,7 @@ export default function DisplayHistory() {
     // const data = await DataFetching()
     
     return (
-        <div className="flex flex-col justify-center items-start container px-6">    
+        <div className="flex flex-col justify-center items-start container p-25">    
             <Card className="flex flex-col justify-center h-full w-full border-3 bg-white">
                 <h1 className="text-start pl-12 pt-5 font-bold text-5xl">History</h1>
                 <DataTable columns={columns} data={historyLog} onRefresh={Fetch_history} loading={loading}/>                

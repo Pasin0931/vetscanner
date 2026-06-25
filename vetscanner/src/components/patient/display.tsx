@@ -100,6 +100,7 @@ export default function DisplayPage() {
     // }
 
     const create_patient = async () => {
+        setLoading(true)
         setRegistering(true)
         try {
             const params = new URLSearchParams({
@@ -165,11 +166,13 @@ export default function DisplayPage() {
             alert("Error while posting new patient")
         } finally {
             setRegistering(false)
+            setLoading(false)
         }
     }
 
     const delete_patient = async (id: number) => {
         try {
+            setLoading(true)
             if (!confirm("Are you sure ?")) {
                 return
             }
@@ -184,6 +187,8 @@ export default function DisplayPage() {
             return res
         } catch (error) {
             alert("Error while deleting patient")
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -232,8 +237,8 @@ export default function DisplayPage() {
                                             <p className="px-2 line-clamp-3">{card.description}</p>
                                         </Card>
                                         <div className="flex flex-row justify-between">
-                                            <Button variant="destructive" onClick={(e) => { e.stopPropagation(); delete_patient(card.id) }}>Delete</Button>
-                                            <Button className="bg-black" onClick={(e) => { e.stopPropagation(); router.push(`/patient/${card.id}`) }}>Edit</Button>
+                                            <Button className="w-20" variant="destructive" onClick={(e) => { e.stopPropagation(); delete_patient(card.id) }}>Delete</Button>
+                                            <Button className="bg-black w-20" onClick={(e) => { e.stopPropagation(); router.push(`/patient/${card.id}`) }}>Edit</Button>
                                         </div>
                                     </Card>
                                 </motion.div>
