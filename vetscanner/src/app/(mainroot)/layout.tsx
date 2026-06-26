@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button";
 import { ScanProvider, useScanContext } from "@/context/scan_content"
 
 function LayoutContent({ children }: { children: React.ReactNode }) {
+
+  const [userEmail, setUserEmail] = useState<string>("")
 
   const router = useRouter()
   const { isScanning } = useScanContext()
@@ -41,6 +43,23 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
     }
 
   }
+
+  useEffect(() => {
+    const fetch_user = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+          credentials: "include"
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setUserEmail(data.email)
+        }
+      } catch (err) {
+        console.error("Error while fetching current user", err)
+      }
+    }
+    fetch_user()
+  }, [])
 
   return (
     <div>
@@ -112,6 +131,11 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                 onClick={() => guardedNavigate("/about")}>
                 About us
               </Button>
+            </div>
+
+            <div className="text-center text-[28px] text-white pt-14">
+              <p>Welcome back,</p>
+              <p className="">{userEmail || "..."}</p>
             </div>
 
             <button className="text-center text-[25px] bg-[#2F2F2F] p-8 text-white mt-auto mb-10"

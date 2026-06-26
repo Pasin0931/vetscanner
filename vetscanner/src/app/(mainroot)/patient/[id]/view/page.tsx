@@ -120,7 +120,7 @@ export default function view() {
 
                 <div className="flex flex-col gap-4"></div>
             </Card>
-            <Button className="mt-3 p-3" onClick={() => router.push("/patient")}>Back</Button>
+            <Button className="mt-3 p-3 w-20" onClick={() => router.push("/patient")}>Back</Button>
         </div>
     )
 }
