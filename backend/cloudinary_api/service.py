@@ -17,6 +17,9 @@ def upload_image(file):
 def upload_pdf(file_bytes: bytes, filename: str):
     file_obj = io.BytesIO(file_bytes)
 
+    if not filename.lower().endswith(".pdf"):
+        filename = f"{filename}.pdf"
+
     result = cloudinary.uploader.upload(
         file_obj,
         folder="vetscanner-reports",

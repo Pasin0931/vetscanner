@@ -121,16 +121,11 @@ export const columns: ColumnDef<History_fetch>[] = [
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
 
-                        <Link href={cata.pdf_report}>
-                            <DropdownMenuItem onClick={() => 
-                                    {
-                                        console.log(cata)                                    
-                                    }
-                                }
-                            >
-                                View report
-                            </DropdownMenuItem>
-                        </Link>                        
+                        <DropdownMenuItem
+                            onClick={() => window.open(cata.pdf_report, "_blank", "noopener,noreferrer")}
+                        >
+                            View report
+                        </DropdownMenuItem>
 
                         <DropdownMenuItem 
                             className="text-red-500"
