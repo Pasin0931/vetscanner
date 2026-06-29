@@ -3,6 +3,7 @@ import io
 import base64
 import functools
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import torch
@@ -212,6 +213,11 @@ def _run_segmentation_grid(slide: "openslide.OpenSlide") -> tuple:
         derived from its per-pixel class map. Kept separate per tile (not
         flattened) so each tile's boxes can later be colored according to
         that same tile's classification result.
+      - tumor_mask: a full-slide binary mask (uint8, 0/255) at
+        SEGMENTATION_LEVEL resolution, where each pixel is 255 if that
+        pixel's per-tile class map said Tumor, else 0. Used to draw a
+        smooth polygon outline of the actual tumor region (as opposed to
+        the box-grid annotation), via cv2.findContours on this mask.
     """
     tumor_tile_coords = []
     sub_boxes_by_tile = {}
@@ -220,6 +226,13 @@ def _run_segmentation_grid(slide: "openslide.OpenSlide") -> tuple:
     patch_size = SEGMENTATION_PATCH_SIZE
     downsample = slide.level_downsamples[level]
     level_w, level_h = slide.level_dimensions[level]
+
+    # Full-slide mask at segmentation-level resolution. This level is
+    # already heavily downsampled from level-0, so even a full-slide mask
+    # here is small enough to comfortably hold in memory (unlike trying to
+    # build a level-0 resolution mask, which could be gigabytes for a large
+    # whole-slide image).
+    tumor_mask = np.zeros((level_h, level_w), dtype=np.uint8)
 
     stats = segmentation_learner.data.stats
 
@@ -256,6 +269,14 @@ def _run_segmentation_grid(slide: "openslide.OpenSlide") -> tuple:
                 # Per-pixel class map for this tile (H x W), not a single scalar
                 pred_class_map = torch.softmax(pred, dim=1).argmax(dim=1).squeeze(0).cpu().numpy()
 
+                # Write this tile's tumor pixels into the full-slide mask,
+                # regardless of whether the tile's DOMINANT class is tumor —
+                # this keeps the polygon outline faithful to the actual
+                # per-pixel prediction rather than only the tiles that
+                # happened to be tumor-dominant overall.
+                tile_tumor_pixels = (pred_class_map == SEGMENTATION_TUMOR_CLASS_INDEX)
+                tumor_mask[y:y + patch_size, x:x + patch_size][tile_tumor_pixels] = 255
+
                 values, counts = np.unique(pred_class_map, return_counts=True)
                 dominant_class = values[np.argmax(counts)]
 
@@ -266,7 +287,71 @@ def _run_segmentation_grid(slide: "openslide.OpenSlide") -> tuple:
                         pred_class_map, loc_x, loc_y, downsample
                     )
 
-    return tumor_tile_coords, sub_boxes_by_tile
+    return tumor_tile_coords, sub_boxes_by_tile, tumor_mask
+
+
+def _generate_polygon_annotated_thumbnail_base64(
+    slide: "openslide.OpenSlide",
+    tumor_mask: np.ndarray,
+    max_size: int = 768,
+) -> Optional[str]:
+    """
+    Generate a base64-encoded JPEG thumbnail with a smooth polygon outline
+    traced around the actual tumor region(s), using cv2.findContours on the
+    full-slide tumor_mask. This is a separate visualization from the
+    box-grid annotation — it shows the tumor area as a continuous outline
+    rather than a set of discrete rectangles.
+
+    Returns None if no tumor pixels exist in the mask (nothing to outline),
+    so the caller can skip adding this image to the report entirely.
+    """
+    if not np.any(tumor_mask):
+        return None
+
+    # Light smoothing before contour detection so the outline isn't jagged
+    # from individual misclassified pixels — a small closing operation
+    # merges nearby tumor pixels into more continuous regions first.
+    kernel = np.ones((5, 5), np.uint8)
+    smoothed_mask = cv2.morphologyEx(tumor_mask, cv2.MORPH_CLOSE, kernel)
+
+    contours, _ = cv2.findContours(smoothed_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None
+
+    # Discard tiny contours (a handful of stray pixels), which would
+    # otherwise clutter the outline with noise unrelated to the real
+    # tumor region(s)
+    min_contour_area = 50  # in mask-resolution pixels, not level-0 pixels
+    contours = [c for c in contours if cv2.contourArea(c) >= min_contour_area]
+    if not contours:
+        return None
+
+    thumbnail = slide.get_thumbnail((max_size, max_size)).convert("RGB")
+    thumb_w, thumb_h = thumbnail.size
+    mask_h, mask_w = tumor_mask.shape
+
+    # Scale factor from mask resolution (SEGMENTATION_LEVEL) to thumbnail coordinates
+    scale_x = thumb_w / mask_w
+    scale_y = thumb_h / mask_h
+
+    thumb_array = np.array(thumbnail)
+
+    outline_color = (255, 0, 0)  # solid red outline, distinct from the
+    # per-subtype colors used on the box-grid thumbnail, since this image
+    # is meant to show "where the tumor is" as a single region, not a
+    # subtype breakdown
+    for contour in contours:
+        scaled_contour = contour.astype(np.float32)
+        scaled_contour[:, 0, 0] *= scale_x
+        scaled_contour[:, 0, 1] *= scale_y
+        scaled_contour = scaled_contour.astype(np.int32)
+        cv2.drawContours(thumb_array, [scaled_contour], -1, outline_color, thickness=2)
+
+    annotated = PILImage.fromarray(thumb_array)
+    buffer = io.BytesIO()
+    annotated.save(buffer, format="JPEG", quality=88)
+    encoded = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    return f"data:image/jpeg;base64,{encoded}"
 
 
 def _run_classification_on_tiles(slide: "openslide.OpenSlide", tumor_tile_coords: list) -> tuple:
@@ -423,6 +508,21 @@ def generate_pdf_report(result: dict, patient_name: str, scan_id: int) -> bytes:
         breakdown_table.setStyle(TableStyle(style_commands))
         story.append(breakdown_table)
 
+    # Polygon-outline thumbnail: a second view of the slide showing the
+    # tumor region as a smooth traced outline, as opposed to the box-grid
+    # annotation above. Only added if one was actually generated (it's
+    # None when no tumor pixels existed at all, e.g. a fully negative scan).
+    polygon_thumbnail_data_uri = result.get("polygon_thumbnail")
+    if polygon_thumbnail_data_uri:
+        polygon_base64_payload = polygon_thumbnail_data_uri.split(",", 1)[1]
+        polygon_image_bytes = base64.b64decode(polygon_base64_payload)
+        polygon_image_buffer = io.BytesIO(polygon_image_bytes)
+
+        story.append(Spacer(1, 20))
+        story.append(Paragraph("Tumor area outline (traced boundary)", styles["Heading3"]))
+        story.append(Spacer(1, 6))
+        story.append(RLImage(polygon_image_buffer, width=4.5 * inch, height=4.5 * inch, kind="proportional"))
+
     story.append(Spacer(1, 24))
     story.append(Paragraph(
         "Generated by Vetscanner. Model: CATCH dataset pretrained segmentation + classification "
@@ -445,7 +545,7 @@ def process_slide(svs_path: str) -> dict:
     slide = openslide.open_slide(svs_path)
 
     try:
-        tumor_tile_coords, sub_boxes_by_tile = _run_segmentation_grid(slide)
+        tumor_tile_coords, sub_boxes_by_tile, tumor_mask = _run_segmentation_grid(slide)
         tumor_tile_count = len(tumor_tile_coords)
 
         if tumor_tile_count < MIN_TUMOR_TILES_FOR_DIAGNOSIS:
@@ -454,12 +554,14 @@ def process_slide(svs_path: str) -> dict:
             # with no boxes drawn at all, since nothing was confidently
             # flagged as tumor in the first place.
             annotated_thumbnail_b64 = _generate_annotated_thumbnail_base64(slide, [])
+            polygon_thumbnail_b64 = _generate_polygon_annotated_thumbnail_base64(slide, tumor_mask)
             return {
                 "tumor_detected": False,
                 "diagnosis": None,
                 "confidence_score": None,
                 "tumor_tile_count": tumor_tile_count,
                 "thumbnail": annotated_thumbnail_b64,
+                "polygon_thumbnail": polygon_thumbnail_b64,
                 "message": "No significant tumor regions detected on this slide.",
             }
 
@@ -469,6 +571,7 @@ def process_slide(svs_path: str) -> dict:
         # tile's sub-boxes can be colored by that tile's predicted class
         colored_sub_boxes = _build_colored_sub_boxes(sub_boxes_by_tile, class_by_tile)
         annotated_thumbnail_b64 = _generate_annotated_thumbnail_base64(slide, colored_sub_boxes)
+        polygon_thumbnail_b64 = _generate_polygon_annotated_thumbnail_base64(slide, tumor_mask)
 
         if not vote_counts:
             return {
@@ -477,6 +580,7 @@ def process_slide(svs_path: str) -> dict:
                 "confidence_score": None,
                 "tumor_tile_count": tumor_tile_count,
                 "thumbnail": annotated_thumbnail_b64,
+                "polygon_thumbnail": polygon_thumbnail_b64,
                 "message": "Tumor regions found, but classification was inconclusive "
                            "(the classifier did not agree with any tumor tile).",
             }
@@ -496,6 +600,7 @@ def process_slide(svs_path: str) -> dict:
                 CLASSIFICATION_LABELS.get(k, str(k)): v for k, v in vote_counts.items()
             },
             "thumbnail": annotated_thumbnail_b64,
+            "polygon_thumbnail": polygon_thumbnail_b64,
             "message": f"Detected {diagnosis_label} with {confidence:.0%} confidence "
                        f"across {tumor_tile_count} tumor-flagged tiles.",
         }
