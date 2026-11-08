@@ -1,0 +1,22 @@
+.git
+CanineCutaneousTumors
+
+# Python
+**/__pycache__
+**/venv
+**/.venv
+**/env
+
+# Node
+**/node_modules
+**/.next
+
+# Secrets (passed in at runtime, never baked into the image)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Editor / misc
+.vscode
+.idea
+**/*.log
