@@ -55,10 +55,10 @@ export default function Sidebar() {
     }
 
     return (
-        <div className="bg-[#242424] flex flex-col justify-between w-72 shrink-0 h-screen text-white">
+        <div className="bg-[#242424] flex flex-col justify-between w-75 shrink-0 h-screen text-white">
             <div>
-                <div className="p-3">
-                    <h1 className="text-2xl font-bold text-[#B1BB1E] pb-3">Vetscanner</h1>
+                <div className="p-3 pb-4">
+                    <h1 className="text-3xl font-bold text-[#B1BB1E] pb-3 pl-3 pt-4">Vetscanner</h1>
                     <div className="bg-white/30 w-full h-[1px]" />
                 </div>
 
