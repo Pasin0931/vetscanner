@@ -1,0 +1,18 @@
+# Frontend (dev): auto-updates when code changes
+# Code is mounted by docker-compose.dev.yml, not copied
+
+FROM node:22-slim
+WORKDIR /app
+
+# Polling makes file changes visible inside Docker on Windows
+ENV NODE_ENV=development \
+    WATCHPACK_POLLING=true \
+    NEXT_TELEMETRY_DISABLED=1
+
+# Installs frontend's packages
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Runs frontend on port 3000 (webpack, so polling works)
+EXPOSE 3000
+CMD ["sh", "-c", "npm ci && exec npm run dev -- --webpack"]
