@@ -93,9 +93,11 @@ export default function ScanPage() {
         if (!selected) return
         const validationError = validateFile(selected)
         if (validationError) {
+            // Stay on the upload box and show the error, so the user can pick again
             setErrorMessage(validationError)
             setFile(null)
-            setStatus("error")
+            setStatus("idle")
+            if (fileInputRef.current) fileInputRef.current.value = ""
             return
         }
         setErrorMessage("")
