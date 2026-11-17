@@ -75,7 +75,9 @@ export default function ScanPage() {
         return () => setIsScanning(false)
     }, [])
 
-    const patientLabels = patients.map((p) => p.name)
+    // ID in the label keeps patients with the same name apart
+    const patientLabel = (p: Patient) => `${p.name} (#${p.id})`
+    const patientLabels = patients.map(patientLabel)
 
     const validateFile = (selected: File): string | null => {
         const lowerName = selected.name.toLowerCase()
@@ -222,7 +224,7 @@ export default function ScanPage() {
                         <Combobox
                             items={patientLabels}
                             onValueChange={(val) => {
-                                const match = patients.find((p) => p.name === val)
+                                const match = patients.find((p) => patientLabel(p) === val)
                                 setSelectedPatientId(match ? match.id : null)
                             }}
                         >
