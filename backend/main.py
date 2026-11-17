@@ -182,11 +182,11 @@ def get_all_logs(current_user=Depends(get_current_user), db: Session = Depends(g
 
 @app.get("/histories/{history_id}")
 def get_history(history_id: int, current_user=Depends(get_current_user)):
-    return {"message": f"Return history {history_id} if belongs to user id {current_user['id']}"}
+    return {"message": f"Return history {history_id} if belongs to user id {current_user.id}"}
 
 @app.get("/histories/patient/{patient_id}")
 def get_patient_histories(patient_id: int, current_user=Depends(get_current_user)):
-    return {"message": f"Return all histories for patient id {patient_id} of user id {current_user['id']}"}
+    return {"message": f"Return all histories for patient id {patient_id} of user id {current_user.id}"}
 
 @app.post("/histories/upload")
 def upload_scan(current_user=Depends(get_current_user)):

@@ -24,6 +24,9 @@ load_dotenv()
 
 FRONTEND_URL = os.getenv("FRONTEND_URL")
 
+# set COOKIE_SECURE=true when running on HTTPS (production level)
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+
 router = APIRouter()
 
 
@@ -73,7 +76,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             key="session_id",
             value=session_id,
             httponly=True,
-            secure=False,
+            secure=COOKIE_SECURE,
             samesite="lax",
             max_age=2592000
         )
@@ -82,7 +85,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             key="session_id",
             value=session_id,
             httponly=True,
-            secure=False,
+            secure=COOKIE_SECURE,
             samesite="lax"
         )
 
@@ -158,7 +161,7 @@ def login(
             key="session_id",
             value=session_id,
             httponly=True,
-            secure=False,
+            secure=COOKIE_SECURE,
             samesite="lax",
             max_age=2592000
         )
@@ -167,7 +170,7 @@ def login(
             key="session_id",
             value=session_id,
             httponly=True,
-            secure=False,
+            secure=COOKIE_SECURE,
             samesite="lax"
         )
 
