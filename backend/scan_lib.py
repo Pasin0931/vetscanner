@@ -15,6 +15,8 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RL
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from reportlab.lib.units import inch
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.barcharts import HorizontalBarChart
 from datetime import datetime
 
 from torchvision import transforms
@@ -442,6 +444,42 @@ def _build_colored_sub_boxes(sub_boxes_by_tile: dict, class_by_tile: dict) -> li
     return colored_boxes
 
 
+def _build_vote_chart(vote_breakdown: dict, label_to_class_index: dict) -> Drawing:
+    """Horizontal bar chart of tile votes per tumor type, colored like the thumbnail boxes."""
+    votes = sorted(vote_breakdown.items(), key=lambda kv: kv[1], reverse=True)
+    labels = [label for label, _ in votes]
+    counts = [count for _, count in votes]
+
+    bar_space = 26
+    chart_height = bar_space * len(votes)
+    drawing = Drawing(450, chart_height + 20)
+
+    chart = HorizontalBarChart()
+    chart.x = 170
+    chart.y = 10
+    chart.width = 240
+    chart.height = chart_height
+    chart.data = [counts]
+    chart.categoryAxis.categoryNames = labels
+    chart.categoryAxis.reverseDirection = 1  # first (most votes) on top
+    chart.categoryAxis.labels.fontSize = 9
+    chart.categoryAxis.labels.dx = -4
+    chart.valueAxis.valueMin = 0
+    chart.valueAxis.valueMax = max(counts) * 1.2  # room for the bar labels
+    chart.valueAxis.visible = False
+    chart.barLabelFormat = "%d"
+    chart.barLabels.fontSize = 9
+    chart.barLabels.nudge = 10
+    chart.bars.strokeColor = None
+
+    for i, label in enumerate(labels):
+        r, g, b = CLASSIFICATION_COLORS_RGB.get(label_to_class_index.get(label), (255, 0, 0))
+        chart.bars[(0, i)].fillColor = colors.Color(r / 255, g / 255, b / 255)
+
+    drawing.add(chart)
+    return drawing
+
+
 def generate_pdf_report(result: dict, patient_name: str, scan_id: int) -> bytes:
     """
     Build a PDF report containing the annotated slide thumbnail and
@@ -527,6 +565,20 @@ def generate_pdf_report(result: dict, patient_name: str, scan_id: int) -> bytes:
 
         breakdown_table.setStyle(TableStyle(style_commands))
         story.append(breakdown_table)
+
+        # Voting chart: one bar per tumor type, most votes on top
+        story.append(Spacer(1, 16))
+        story.append(Paragraph("Tile voting", styles["Heading3"]))
+        story.append(_build_vote_chart(result["vote_breakdown"], label_to_class_index))
+
+        votes = sorted(result["vote_breakdown"].items(), key=lambda kv: kv[1], reverse=True)
+        total_votes = sum(count for _, count in votes)
+        winner, winner_votes = votes[0]
+        story.append(Spacer(1, 6))
+        story.append(Paragraph(
+            f"Winner: <b>{winner}</b> with {winner_votes} of {total_votes} votes ({winner_votes / total_votes:.0%})",
+            styles["Normal"]
+        ))
 
     # Polygon-outline thumbnail: a second view of the slide showing the
     # tumor region as a smooth traced outline, as opposed to the box-grid
