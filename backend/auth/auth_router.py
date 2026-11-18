@@ -116,6 +116,9 @@ def register(
     body: RegisterRequest,
     db: Session = Depends(get_db)
 ):
+    if db.query(User).filter(User.email == body.email).first():
+        raise HTTPException(status_code=400, detail="Email already exists")
+
     user = User(
         email=body.email,
         name=body.name,
@@ -143,6 +146,10 @@ def login(
 
     if not user:
         raise HTTPException(status_code=401, detail="invalid credentials")
+
+    # Google accounts have no password
+    if not user.password:
+        raise HTTPException(status_code=401, detail="This email uses Google login")
 
     if not verify_password(body.password, user.password): 
         raise HTTPException(status_code=401, detail="invalid credentials")
