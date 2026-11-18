@@ -27,28 +27,6 @@ AI histopathology scanner for canine skin tumors. Upload a whole slide image (`.
 
 Stop it with `docker compose down`.
 
-## Run without Docker
-
-The backend needs **Python 3.9** (fastai v1 doesn't work on newer versions).
-
-**Backend**
-```bash
-cd backend
-python3.9 -m venv venv
-source venv/bin/activate          # Windows: .\venv\Scripts\Activate.ps1
-pip install -r ../requirements.txt
-python -m uvicorn main:app --reload
-```
-You also need PostgreSQL running and `DATABASE_URL` set in `backend/.env`.
-
-**Frontend**
-```bash
-cd vetscanner
-npm install
-echo "NEXT_PUBLIC_API_URL=http://localhost:8000" > .env.local
-npm run dev
-```
-
 ## How scanning works
 
 1. Pick a patient and upload a slide.
