@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 
 import { ScanLine, Activity, Gauge, Grid3x3, type LucideIcon } from "lucide-react"
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
 import { Bar, BarChart } from "recharts"
 import {
   Card,
@@ -191,16 +191,19 @@ function ChartAreaLinear({ data }: { data: { day: string; scans: number }[] }) {
         <CardDescription>Number of scans performed per day</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={timelineChartConfig} className="h-64 w-full">
+        <ChartContainer config={timelineChartConfig} className="h-72 w-full">
           <AreaChart
             accessibilityLayer
             data={data}
             margin={{
+              top: 24,
               left: 12,
               right: 12,
             }}
           >
             <CartesianGrid vertical={false} />
+            {/* Headroom above the highest point */}
+            <YAxis hide allowDecimals={false} domain={[0, (max: number) => max + 1]} />
             <XAxis
               dataKey="day"
               tickLine={false}

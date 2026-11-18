@@ -30,6 +30,13 @@ export default function DisplayPage() {
     const [patients, setPatients] = useState<Patient[]>([])
     const [loading, setLoading] = useState(false)
 
+    // "inactive" patients are shown as archived
+    const [statusFilter, setStatusFilter] = useState<"active" | "archived">("active")
+    const isArchived = (p: Patient) => p.status === "inactive"
+    const activeCount = patients.filter((p) => !isArchived(p)).length
+    const archivedCount = patients.length - activeCount
+    const shownPatients = patients.filter((p) => (statusFilter === "archived") === isArchived(p))
+
     const [form, setForm] = useState<PatientFormValues>(EMPTY_PATIENT)
     const [pictureFile, setPictureFile] = useState<File | null>(null)
     const [picturePreviewUrl, setPicturePreviewUrl] = useState("")
@@ -145,14 +152,25 @@ export default function DisplayPage() {
                 }
             />
 
+            {activeTab === "list" && (
+                <div className="flex gap-2">
+                    <Button size="sm" variant={statusFilter === "active" ? "default" : "outline"} onClick={() => setStatusFilter("active")}>
+                        Active ({activeCount})
+                    </Button>
+                    <Button size="sm" variant={statusFilter === "archived" ? "default" : "outline"} onClick={() => setStatusFilter("archived")}>
+                        Inactive ({archivedCount})
+                    </Button>
+                </div>
+            )}
+
             {activeTab === "list" ? (
                 loading ? (
                     <div className="flex justify-center py-20">
                         <LoaderCircle className="animate-spin size-10" />
                     </div>
-                ) : patients.length > 0 ? (
+                ) : shownPatients.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        {patients.map((patient) => (
+                        {shownPatients.map((patient) => (
                             <div
                                 key={patient.id}
                                 onClick={() => router.push(`/patient/${patient.id}/view`)}
@@ -180,7 +198,9 @@ export default function DisplayPage() {
                         ))}
                     </div>
                 ) : (
-                    <Panel className="text-center text-gray-500 py-16">No patients registered</Panel>
+                    <p className="text-center text-gray-500 py-16">
+                        {statusFilter === "archived" ? "No inactive patients" : "No active patients"}
+                    </p>
                 )
             ) : (
                 <Panel>
