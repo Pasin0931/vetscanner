@@ -461,7 +461,7 @@ def _build_vote_chart(vote_breakdown: dict, label_to_class_index: dict) -> Drawi
     chart.height = chart_height
     chart.data = [counts]
     chart.categoryAxis.categoryNames = labels
-    chart.categoryAxis.reverseDirection = 1  # first (most votes) on top
+    chart.categoryAxis.reverseDirection = 1  # most vote on top
     chart.categoryAxis.labels.fontSize = 9
     chart.categoryAxis.labels.dx = -4
     chart.valueAxis.valueMin = 0
@@ -634,7 +634,11 @@ def process_slide(svs_path: str) -> dict:
                 "tumor_tile_count": tumor_tile_count,
                 "thumbnail": annotated_thumbnail_b64,
                 "polygon_thumbnail": polygon_thumbnail_b64,
-                "message": "No significant tumor regions detected on this slide.",
+                "message": (
+                    "No significant tumor regions detected on this slide. "
+                    f"Boxes are drawn only when at least {MIN_TUMOR_TILES_FOR_DIAGNOSIS} "
+                    f"tumor tiles are found ({tumor_tile_count} found)."
+                ),
             }
 
         vote_counts, class_by_tile = _run_classification_on_tiles(slide, tumor_tile_coords)
