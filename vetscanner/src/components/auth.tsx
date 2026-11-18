@@ -20,12 +20,14 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
     const [rememberMe, setRememberMe] = useState(false)
 
     const [activeTab, setActiveTab] = useState(startTab)
+    const [errorMsg, setErrorMsg] = useState("")
 
     const [pageLoad, setPageLoad] = useState(false)
     const { login, register, googleLogin } = useAuth()
 
     const router = useRouter();
     const handle_login_bt = async () => {
+        setErrorMsg("")
         try {
             await login(email, password, rememberMe)
             alert("Login success")
@@ -33,16 +35,17 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
             router.push("/dashboard");
         } catch (err: any) {
             console.log("Login failed !!!", err)
-            alert(err.message)
+            setErrorMsg(err.message)
         }
     }
 
     const handle_register_bt = async () => {
+        setErrorMsg("")
         try {
             await register(email, password)
             alert("Register success")
         } catch (err: any) {
-            alert(err.message)
+            setErrorMsg(err.message)
         }
     }
 
@@ -85,8 +88,8 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
                         damping: 25
                     }}
                 />
-                <button onClick={() => setActiveTab("Login")} className="relative z-10 w-[50%] text-center">Login</button>
-                <button onClick={() => setActiveTab("Register")} className="relative z-10 w-[50%] text-center">Register</button>
+                <button onClick={() => { setActiveTab("Login"); setErrorMsg("") }} className="relative z-10 w-[50%] text-center">Login</button>
+                <button onClick={() => { setActiveTab("Register"); setErrorMsg("") }} className="relative z-10 w-[50%] text-center">Register</button>
             </div>
 
             <div className="flex flex-col gap-7 pt-7 w-80">
@@ -133,6 +136,10 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
                             <button className="font-bold">Remember me</button>
                         </div>
                     </div>
+                )}
+
+                {errorMsg && (
+                    <p className="text-red-500 text-[13px] text-center -my-3">{errorMsg}</p>
                 )}
 
                 <div className="flex flex-row justify-center items-center">
