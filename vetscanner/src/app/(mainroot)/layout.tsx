@@ -8,11 +8,11 @@ export default function RootLayout({ children }: {
 }) {
   return (
     <ScanProvider>
-      <div className="flex">
+      <div className="flex h-screen overflow-hidden">
         <Sidebar />
-        <div className="flex flex-col flex-1 bg-[#156E68E3] h-screen justify-center items-center">
+        <main className="flex flex-1 flex-col items-center min-w-0 overflow-y-auto bg-background">
           {children}
-        </div>
+        </main>
       </div>
     </ScanProvider>
   )

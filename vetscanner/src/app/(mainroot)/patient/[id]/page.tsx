@@ -1,83 +1,42 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import { useEffect, useState, useRef } from "react"
-
+import { useEffect, useState } from "react"
 import { LoaderCircle } from "lucide-react"
 
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-    Combobox,
-    ComboboxContent,
-    ComboboxEmpty,
-    ComboboxInput,
-    ComboboxItem,
-    ComboboxList,
-} from "@/components/ui/combobox"
-
-type Patient = {
-    id: number
-    name: string
-    breed: string | null
-    age: number | null
-    weight: number | null
-    gender: string | null
-    description: string | null
-    species: string
-    patient_portrait: string | null
-    status: string | null
-    user_id: number
-    created_at: string
-}
+import { Page, PageHeader, Panel } from "@/components/layout/page"
+import PatientForm, { EMPTY_PATIENT, type PatientFormValues } from "@/components/patient/patient-form"
+import type { Patient } from "@/types/patient"
 
 export default function EditPage() {
-
     const { id } = useParams()
     const router = useRouter()
 
-    const species_mock = ["cat", "dog"]
-
-    const [name, setName] = useState("")
-    const [description, setDescription] = useState("")
-    const [species, setSpecies] = useState("")
-    const [breed, setBreed] = useState("")
-    const [age, setAge] = useState<number>(0)
-    const [weight, setWeight] = useState<number>(0)
-    const [gender, setGender] = useState("")
-    const [status, setStatus] = useState("")
-    const [picture_url, setPictureUrl] = useState("")
-
+    const [form, setForm] = useState<PatientFormValues>(EMPTY_PATIENT)
+    const [pictureUrl, setPictureUrl] = useState("")
     const [pictureFile, setPictureFile] = useState<File | null>(null)
-    const fileInputRef = useRef<HTMLInputElement>(null)
-
-    const [loading, setLoading] = useState(false)
     const [saving, setSaving] = useState(false)
 
-    const handlePictureSelect = (selected: File | null) => {
-        if (!selected) return
-        setPictureFile(selected)
-        setPictureUrl(URL.createObjectURL(selected))
+    const handlePictureSelect = (file: File) => {
+        setPictureFile(file)
+        setPictureUrl(URL.createObjectURL(file))
     }
 
     const handle_save = async () => {
         setSaving(true)
         try {
-            let finalPictureUrl = picture_url
+            let finalPictureUrl = pictureUrl
 
             if (pictureFile) {
                 const formData = new FormData()
                 formData.append("file", pictureFile)
 
-                const uploadRes = await fetch(
-                    `${process.env.NEXT_PUBLIC_API_URL}/upload/?pet_id=${id}&type=PROFILE`,
-                    {
-                        method: "POST",
-                        credentials: "include",
-                        body: formData
-                    }
-                )
+                const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/?pet_id=${id}&type=PROFILE`, {
+                    method: "POST",
+                    credentials: "include",
+                    body: formData
+                })
 
                 if (uploadRes.ok) {
                     const uploadData = await uploadRes.json()
@@ -88,15 +47,15 @@ export default function EditPage() {
             }
 
             const params = new URLSearchParams({
-                name_: name,
-                breed_: breed,
-                age_: age.toString(),
-                weight_: weight.toString(),
-                gender_: gender,
-                description_: description,
-                species_: species,
+                name_: form.name,
+                breed_: form.breed,
+                age_: form.age.toString(),
+                weight_: form.weight.toString(),
+                gender_: form.gender,
+                description_: form.description,
+                species_: form.species,
                 potrait_: finalPictureUrl,
-                status_: status
+                status_: form.status
             })
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients/${id}?${params}`, {
                 method: "PUT",
@@ -124,14 +83,16 @@ export default function EditPage() {
             })
             if (res.ok) {
                 const data: Patient = await res.json()
-                setName(data.name)
-                setDescription(data.description ?? "")
-                setSpecies(data.species)
-                setBreed(data.breed ?? "")
-                setAge(data.age ?? 0)
-                setWeight(data.weight ?? 0)
-                setGender(data.gender ?? "")
-                setStatus(data.status ?? "")
+                setForm({
+                    name: data.name,
+                    description: data.description ?? "",
+                    breed: data.breed ?? "",
+                    age: data.age ?? 0,
+                    weight: data.weight ?? 0,
+                    gender: data.gender ?? "",
+                    status: data.status ?? "",
+                    species: data.species,
+                })
                 setPictureUrl(data.patient_portrait ?? "")
             }
         }
@@ -139,111 +100,23 @@ export default function EditPage() {
     }, [id])
 
     return (
-        <div className="flex flex-col items-center w-[95%] h-170 px-5">
-            <Card className="mt-5 p-8 w-[95%] border-3 bg-white overflow-y-auto">
-                <div className="flex flex-col gap-4">
-                    <h1 className="font-bold text-4xl">Edit Patient</h1>
+        <Page>
+            <PageHeader title="Edit Patient" description="Update this patient's details" />
 
-                    <div className="flex flex-col gap-1">
-                        <label className="font-semibold text-sm">Name</label>
-                        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter name" />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="font-semibold text-sm">Description</label>
-                        <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter description" />
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="font-semibold text-sm">Breed</label>
-                        <Input value={breed} onChange={(e) => setBreed(e.target.value)} placeholder="Enter breed" />
-                    </div>
-
-                    <div className="flex flex-row gap-4">
-                        <div className="flex flex-col gap-1 w-full">
-                            <label className="font-semibold text-sm">Age</label>
-                            <Input value={age} placeholder="Enter age" type="number" onChange={(e) => setAge(Number(e.target.value))} />
-                        </div>
-                        <div className="flex flex-col gap-1 w-full">
-                            <label className="font-semibold text-sm">Weight (kg)</label>
-                            <Input value={weight} placeholder="Enter weight" type="number" onChange={(e) => setWeight(Number(e.target.value))} />
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="font-semibold text-sm">Gender</label>
-                        <Combobox items={["male", "female"]} onValueChange={(val) => setGender(String(val))}>
-                            <ComboboxInput placeholder={gender || "Select gender"} />
-                            <ComboboxContent>
-                                <ComboboxEmpty>No items found.</ComboboxEmpty>
-                                <ComboboxList>
-                                    {(item) => (
-                                        <ComboboxItem key={item} value={item}>{item}</ComboboxItem>
-                                    )}
-                                </ComboboxList>
-                            </ComboboxContent>
-                        </Combobox>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="font-semibold text-sm">Status</label>
-                        <Combobox items={["active", "inactive"]} onValueChange={(val) => setStatus(String(val))}>
-                            <ComboboxInput placeholder={status || "Select status"} />
-                            <ComboboxContent>
-                                <ComboboxEmpty>No items found.</ComboboxEmpty>
-                                <ComboboxList>
-                                    {(item) => (
-                                        <ComboboxItem key={item} value={item}>{item}</ComboboxItem>
-                                    )}
-                                </ComboboxList>
-                            </ComboboxContent>
-                        </Combobox>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="font-semibold text-sm">Species</label>
-                        <Combobox items={species_mock} onValueChange={(val) => setSpecies(String(val))}>
-                            <ComboboxInput placeholder={species || "Select a species"} />
-                            <ComboboxContent>
-                                <ComboboxEmpty>No items found.</ComboboxEmpty>
-                                <ComboboxList>
-                                    {(item) => (
-                                        <ComboboxItem key={item} value={item}>{item}</ComboboxItem>
-                                    )}
-                                </ComboboxList>
-                            </ComboboxContent>
-                        </Combobox>
-                    </div>
-
-                    <div className="flex flex-col gap-1">
-                        <label className="font-semibold text-sm">Picture</label>
-                        <div
-                            onClick={() => fileInputRef.current?.click()}
-                            className="flex items-center justify-center h-62 bg-gray-100 rounded-lg border-2 border-dashed cursor-pointer overflow-hidden hover:bg-gray-200 transition"
-                        >
-                            {picture_url ? (
-                                <img src={picture_url} alt="preview" className="h-full object-contain rounded-lg" />
-                            ) : (
-                                <p className="font-bold text-gray-500">Upload files</p>
-                            )}
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={(e) => handlePictureSelect(e.target.files?.[0] ?? null)}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex flex-row gap-3 self-center mt-4">
-                        <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
-                        <Button className="bg-black" onClick={handle_save} disabled={saving}>
-                            {saving ? <LoaderCircle className="animate-spin w-4 h-4" /> : "Save"}
-                        </Button>
-                    </div>
+            <Panel>
+                <PatientForm
+                    values={form}
+                    onChange={setForm}
+                    pictureUrl={pictureUrl}
+                    onPictureSelect={handlePictureSelect}
+                />
+                <div className="flex justify-end gap-3 pt-6">
+                    <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+                    <Button onClick={handle_save} disabled={saving}>
+                        {saving ? <LoaderCircle className="animate-spin size-4" /> : "Save"}
+                    </Button>
                 </div>
-            </Card>
-        </div>
+            </Panel>
+        </Page>
     )
 }

@@ -1,15 +1,13 @@
 "use client"
 
-import { Card } from "../ui/card"
-
-import { columns, Catalogue, History_fetch } from "./columns"
-import { DataTable } from "./data-table"
-
 import { useEffect, useState } from "react"
 
+import { Page, PageHeader, Panel } from "@/components/layout/page"
+import { columns, History_fetch } from "./columns"
+import { DataTable } from "./data-table"
+
 export default function DisplayHistory() {
-    const [historyLog, setHistoryLog] = useState<History_fetch[]>([])  
-    
+    const [historyLog, setHistoryLog] = useState<History_fetch[]>([])
     const [loading, setLoading] = useState(false)
 
     const Fetch_history = async () => {
@@ -19,8 +17,7 @@ export default function DisplayHistory() {
                 credentials: "include"
             })
             const data = await res.json()
-            setHistoryLog(data)
-
+            setHistoryLog(Array.isArray(data) ? data : [])
         } catch (err) {
             alert("Error while fetching history")
         } finally {
@@ -31,15 +28,13 @@ export default function DisplayHistory() {
     useEffect(() => {
         Fetch_history()
     }, [])
-    
-    // const data = await DataFetching()
-    
+
     return (
-        <div className="flex flex-col justify-center items-start container p-25">    
-            <Card className="flex flex-col justify-center h-full w-full border-3 bg-white">
-                <h1 className="text-start pl-12 pt-5 font-bold text-5xl">History</h1>
-                <DataTable columns={columns} data={historyLog} onRefresh={Fetch_history} loading={loading}/>                
-            </Card>        
-        </div>
+        <Page>
+            <PageHeader title="History" description="All past scans and their reports" />
+            <Panel>
+                <DataTable columns={columns} data={historyLog} onRefresh={Fetch_history} loading={loading} />
+            </Panel>
+        </Page>
     )
 }

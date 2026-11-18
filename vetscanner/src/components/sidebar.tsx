@@ -55,10 +55,10 @@ export default function Sidebar() {
     }
 
     return (
-        <div className="bg-[#242424] flex flex-col justify-between w-75 shrink-0 h-screen text-white">
+        <div className="bg-[#156E68] flex flex-col justify-between w-75 shrink-0 h-screen text-white">
             <div>
                 <div className="p-3 pb-4">
-                    <h1 className="text-3xl font-bold text-[#B1BB1E] pb-3 pl-3 pt-4">Vetscanner</h1>
+                    <h1 className="text-3xl font-bold text-white pb-3 pl-3 pt-4">Vetscanner</h1>
                     <div className="bg-white/30 w-full h-[1px]" />
                 </div>
 
@@ -68,7 +68,7 @@ export default function Sidebar() {
                         return (
                             <button
                                 key={path}
-                                className={`flex items-center gap-5 transition-colors rounded-lg px-4 py-3 ${active ? "bg-white/20" : "bg-white/5 hover:bg-white/15"}`}
+                                className={`flex items-center gap-5 transition-colors rounded-lg px-4 py-3 ${active ? "bg-black/25" : "bg-black/10 hover:bg-black/20"}`}
                                 onClick={() => guardedNavigate(path)}
                             >
                                 <Icon className="w-4 h-4" />
@@ -80,11 +80,11 @@ export default function Sidebar() {
             </div>
 
             <div>
-                <div className="bg-white/5 px-4 py-2 text-sm truncate">
+                <div className="bg-black/10 px-4 py-2 text-sm truncate">
                     Hi, {email ?? "..."}
                 </div>
                 <button
-                    className="flex items-center gap-3 bg-white/5 hover:bg-white/15 transition-colors px-4 py-3 w-full"
+                    className="flex items-center gap-3 bg-black/10 hover:bg-black/20 transition-colors px-4 py-3 w-full"
                     onClick={handle_logout}
                 >
                     <LogOut className="w-4 h-4" />

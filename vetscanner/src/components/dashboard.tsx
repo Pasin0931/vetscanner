@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 
-import { TrendingUp } from "lucide-react"
+import { ScanLine, Activity, Gauge, Grid3x3, type LucideIcon } from "lucide-react"
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts"
 import { Bar, BarChart } from "recharts"
 import {
@@ -26,13 +26,14 @@ import {
   ChartLegendContent,
 } from "@/components/ui/chart"
 
-import { motion } from "framer-motion"
+import { Page, PageHeader } from "@/components/layout/page"
 
 export const description = "A linear area chart"
 
 interface StatCardProps {
   label: string;
   value: string | number;
+  icon: LucideIcon;
 }
 
 type ResultProps = {
@@ -84,7 +85,7 @@ export default function Dashboard() {
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/histories`, { credentials: "include" })
       const this_ = await res.json()
-      setData(this_)
+      setData(Array.isArray(this_) ? this_ : [])
     } catch (error) {
       alert("Error while fetching dashboard data")
       console.error("error while fetching data in dashboard !!")
@@ -136,45 +137,30 @@ export default function Dashboard() {
   const timelineChartData = Object.entries(scansByDate).map(([day, scans]) => ({ day, scans }))
 
   return (
-    <div className="flex flex-col justify-center items-center h-screen gap-4 w-auto">
-      <Card className="border border-3 p-10">
-        <div className="flex flex-col gap-3 overflow-y-auto snap-y snap-mandatory h-140 w-250">
-          <div className="min-w-[600px] flex-shrink-0 h-full snap-start">
-            <ChartAreaLinear data={timelineChartData} />
-          </div>
-          <div className="min-w-[600px] flex-shrink-0 h-full snap-start">
-            <NormalBar data={diagnosisChartData} />
-          </div>
-        </div>
+    <Page>
+      <PageHeader title="Dashboard" description="Overview of your scans" />
 
-        {data?.length === 0 ? (
-          <div className="flex flex-row justify-center items-center gap-4 w-full">
-            <StatCard label="Total Scans" value={"--"} />
-            <StatCard label="Tumors Detected" value={"--"} />
-            <StatCard label="Avg. Confidence" value={"--"} />
-            <StatCard label="Avg. Flagged Tiles" value={"--"} />
-          </div>
-        ) : (
-          <div className="flex flex-row justify-center items-center gap-4 w-full">
-            <StatCard label="Total Scans" value={totalScans} />
-            <StatCard label="Tumors Detected" value={tumorsDetected} />
-            <StatCard label="Avg. Confidence" value={averageConfidence !== null ? `${averageConfidence}%` : "--"} />
-            <StatCard label="Avg. Flagged Tiles" value={averageFlaggedTiles !== null ? averageFlaggedTiles : "--"} />
-          </div>
-        )}
-      </Card>
-    </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard icon={ScanLine} label="Total Scans" value={data.length === 0 ? "--" : totalScans} />
+        <StatCard icon={Activity} label="Tumors Detected" value={data.length === 0 ? "--" : tumorsDetected} />
+        <StatCard icon={Gauge} label="Avg. Confidence" value={averageConfidence !== null ? `${averageConfidence}%` : "--"} />
+        <StatCard icon={Grid3x3} label="Avg. Flagged Tiles" value={averageFlaggedTiles !== null ? averageFlaggedTiles : "--"} />
+      </div>
+
+      <ChartAreaLinear data={timelineChartData} />
+      <NormalBar data={diagnosisChartData} />
+    </Page>
   )
 }
 
 function NormalBar({ data }: { data: { diagnosis: string; count: number }[] }) {
   return (
-    <Card className="min-w-[600px] h-full border">
-      <CardHeader className="pl-7">
-        <CardTitle className="text-2xl font-bold">Tumor Type Breakdown</CardTitle>
-        <CardDescription className="text-lg">Diagnosed cases by tumor type</CardDescription>
+    <Card className="rounded-xl bg-[#F4F6F6] ring-0 border-0 drop-shadow-md">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold">Tumor Type Breakdown</CardTitle>
+        <CardDescription>Diagnosed cases by tumor type</CardDescription>
       </CardHeader>
-      <ChartContainer config={diagnosisChartConfig} className="min-h-[200px] w-full bg-white p-10">
+      <ChartContainer config={diagnosisChartConfig} className="h-72 w-full px-6">
         <BarChart accessibilityLayer data={data}>
           <CartesianGrid vertical={false} />
           <XAxis
@@ -199,13 +185,13 @@ function NormalBar({ data }: { data: { diagnosis: string; count: number }[] }) {
 
 function ChartAreaLinear({ data }: { data: { day: string; scans: number }[] }) {
   return (
-    <Card className="flex flex-col h-full overflow-hidden border">
-      <CardHeader className="pl-7">
-        <CardTitle className="text-2xl font-bold">Scans Over Time</CardTitle>
-        <CardDescription className="text-lg">Number of scans performed per day</CardDescription>
+    <Card className="rounded-xl bg-[#F4F6F6] ring-0 border-0 drop-shadow-md">
+      <CardHeader>
+        <CardTitle className="text-lg font-bold">Scans Over Time</CardTitle>
+        <CardDescription>Number of scans performed per day</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 min-h-0">
-        <ChartContainer config={timelineChartConfig} className="h-full w-full px-4 py-4">
+      <CardContent>
+        <ChartContainer config={timelineChartConfig} className="h-64 w-full">
           <AreaChart
             accessibilityLayer
             data={data}
@@ -240,11 +226,16 @@ function ChartAreaLinear({ data }: { data: { day: string; scans: number }[] }) {
   )
 }
 
-function StatCard({ label, value }: StatCardProps) {
+function StatCard({ label, value, icon: Icon }: StatCardProps) {
   return (
-    <Card className="flex flex-col justify-center items-center h-25 w-40">
-      <p className="text-muted-foreground text-lg">{label}</p>
-      <p className="text-3xl font-bold">{value}</p>
-    </Card>
+    <div className="flex items-center gap-4 rounded-xl bg-[#F4F6F6] p-5 drop-shadow-md">
+      <div className="flex items-center justify-center size-11 rounded-xl bg-[#E6F2F1] text-[#156E68]">
+        <Icon className="size-5" />
+      </div>
+      <div>
+        <p className="text-sm text-gray-500">{label}</p>
+        <p className="text-2xl font-bold text-[#0E4E4A]">{value}</p>
+      </div>
+    </div>
   )
 }
