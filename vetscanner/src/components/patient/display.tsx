@@ -1,65 +1,38 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { motion } from "framer-motion"
-
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { LoaderCircle, Trash2 } from "lucide-react"
 
-import Image from "next/image"
-import { LoaderCircle } from "lucide-react"
-
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
-import {
-    Combobox,
-    ComboboxContent,
-    ComboboxEmpty,
-    ComboboxInput,
-    ComboboxItem,
-    ComboboxList,
-} from "@/components/ui/combobox"
+import { Page, PageHeader, Panel } from "@/components/layout/page"
+import PatientForm, { EMPTY_PATIENT, type PatientFormValues } from "@/components/patient/patient-form"
+import { DEFAULT_PORTRAIT, type Patient } from "@/types/patient"
 
-type Patient = {
-    id: number
-    name: string
-    breed: string | null
-    age: number | null
-    weight: number | null
-    gender: string | null
-    description: string | null
-    species: string
-    patient_portrait: string
-    status: string | null
-    user_id: number
-    created_at: string
+function toParams(values: PatientFormValues, portrait: string) {
+    return new URLSearchParams({
+        name_: values.name,
+        breed_: values.breed,
+        age_: values.age.toString(),
+        weight_: values.weight.toString(),
+        gender_: values.gender,
+        description_: values.description,
+        species_: values.species,
+        potrait_: portrait,
+        status_: values.status,
+    })
 }
-
-const DEFAULT_PORTRAIT = "https://img.magnific.com/free-photo/pug-dog-isolated-white-background_2829-11416.jpg?semt=ais_hybrid&w=740&q=80"
 
 export default function DisplayPage() {
     const router = useRouter()
 
-    const [activeTab, setActiveTab] = useState("home")
-
-    const species_ = ["cat", "dog"]
+    const [activeTab, setActiveTab] = useState<"list" | "register">("list")
     const [patients, setPatients] = useState<Patient[]>([])
-
-    const [name, setName] = useState("")
-    const [description, setDescription] = useState("")
-    const [species, setSpecies] = useState("")
-    const [breed, setBreed] = useState("")
-    const [age, setAge] = useState<number>(0)
-    const [weight, setWeight] = useState<number>(0)
-    const [gender, setGender] = useState("")
-    const [status, setStatus] = useState("")
-
-    const [pictureFile, setPictureFile] = useState<File | null>(null)
-    const [picturePreviewUrl, setPicturePreviewUrl] = useState<string>("")
-    const fileInputRef = useRef<HTMLInputElement>(null)
-
     const [loading, setLoading] = useState(false)
+
+    const [form, setForm] = useState<PatientFormValues>(EMPTY_PATIENT)
+    const [pictureFile, setPictureFile] = useState<File | null>(null)
+    const [picturePreviewUrl, setPicturePreviewUrl] = useState("")
     const [registering, setRegistering] = useState(false)
 
     const fetch_patients = async () => {
@@ -69,7 +42,7 @@ export default function DisplayPage() {
                 credentials: "include"
             })
             const data = await res.json()
-            setPatients(data)
+            setPatients(Array.isArray(data) ? data : [])
         } catch (err) {
             alert("Error while fetching patients")
         } finally {
@@ -77,44 +50,15 @@ export default function DisplayPage() {
         }
     }
 
-    const handlePictureSelect = (selected: File | null) => {
-        if (!selected) {
-            return
-        }
-        setPictureFile(selected)
-        setPicturePreviewUrl(URL.createObjectURL(selected))
+    const handlePictureSelect = (file: File) => {
+        setPictureFile(file)
+        setPicturePreviewUrl(URL.createObjectURL(file))
     }
 
-    // const resetForm = () => {
-    //     setName("")
-    //     setDescription("")
-    //     setSpecies("")
-    //     setBreed("")
-    //     setAge(0)
-    //     setWeight(0)
-    //     setGender("")
-    //     setStatus("")
-    //     setPictureFile(null)
-    //     setPicturePreviewUrl("")
-    //     if (fileInputRef.current) fileInputRef.current.value = ""
-    // }
-
     const create_patient = async () => {
-        setLoading(true)
         setRegistering(true)
         try {
-            const params = new URLSearchParams({
-                name_: name,
-                breed_: breed,
-                age_: age.toString(),
-                weight_: weight.toString(),
-                gender_: gender,
-                description_: description,
-                species_: species,
-                potrait_: DEFAULT_PORTRAIT,
-                status_: status
-            })
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients?${params}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients?${toParams(form, DEFAULT_PORTRAIT)}`, {
                 method: "POST",
                 credentials: "include"
             })
@@ -131,51 +75,40 @@ export default function DisplayPage() {
                 const formData = new FormData()
                 formData.append("file", pictureFile)
 
-                const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/?pet_id=${newPatientId}&type=PROFILE`,
-                    {
-                        method: "POST",
-                        credentials: "include",
-                        body: formData
-                    }
-                )
+                const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/?pet_id=${newPatientId}&type=PROFILE`, {
+                    method: "POST",
+                    credentials: "include",
+                    body: formData
+                })
 
                 if (uploadRes.ok) {
                     const uploadData = await uploadRes.json()
-                    const uploadedUrl = uploadData.data.url
-
-                    const patchParams = new URLSearchParams({
-                        name_: name,
-                        breed_: breed,
-                        age_: age.toString(),
-                        weight_: weight.toString(),
-                        gender_: gender,
-                        description_: description,
-                        species_: species,
-                        potrait_: uploadedUrl,
-                        status_: status
+                    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients/${newPatientId}?${toParams(form, uploadData.data.url)}`, {
+                        method: "PUT",
+                        credentials: "include"
                     })
-                    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients/${newPatientId}?${patchParams}`, { method: "PUT", credentials: "include" })
                 } else {
                     alert("Patient registered, but the picture upload failed.")
                 }
             }
 
-            fetch_patients()
             alert("Patient registered !")
+            setForm(EMPTY_PATIENT)
+            setPictureFile(null)
+            setPicturePreviewUrl("")
+            setActiveTab("list")
+            fetch_patients()
         } catch (err) {
             alert("Error while posting new patient")
         } finally {
             setRegistering(false)
-            setLoading(false)
         }
     }
 
     const delete_patient = async (id: number) => {
+        if (!confirm("Are you sure ?")) return
         try {
             setLoading(true)
-            if (!confirm("Are you sure ?")) {
-                return
-            }
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patients/${id}`, {
                 method: "DELETE",
                 credentials: "include"
@@ -184,7 +117,6 @@ export default function DisplayPage() {
                 fetch_patients()
                 alert("Patient deleted")
             }
-            return res
         } catch (error) {
             alert("Error while deleting patient")
         } finally {
@@ -197,171 +129,74 @@ export default function DisplayPage() {
     }, [])
 
     return (
-        <div className="flex flex-col justify-center items-center w-[95%] px-5">
-            <div className="relative flex flex-row justify-between bg-[#D9D9D9] py-3 font-bold rounded w-[95%]">
-                <motion.div
-                    className="absolute top-0 left-0 mt-1 h-10 w-[50%] bg-[#ADADAD] rounded"
-                    animate={{
-                        x: activeTab === "home" ? 4 : "100%"
-                    }}
-                    transition={{
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 25
-                    }}
-                />
-                <button onClick={() => setActiveTab("home")} className="relative z-10 w-[50%] text-center">Your patients</button>
-                <button onClick={() => setActiveTab("register")} className="relative z-10 w-[50%] text-center">Registration</button>
-            </div>
+        <Page>
+            <PageHeader
+                title="Patients"
+                description="Manage your patients and register new ones"
+                actions={
+                    <>
+                        <Button variant={activeTab === "list" ? "default" : "outline"} onClick={() => setActiveTab("list")}>
+                            Your patients
+                        </Button>
+                        <Button variant={activeTab === "register" ? "default" : "outline"} onClick={() => setActiveTab("register")}>
+                            Register
+                        </Button>
+                    </>
+                }
+            />
 
-            {activeTab === "home" ? (
-                <Card className="mt-5 p-5 h-170 w-[95%] border-3 bg-white overflow-y-auto">
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center h-screen">
-                            <LoaderCircle className="animate-spin w-18 h-18" />
-                        </div>
-                    ) : patients.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {patients.map((card, index) => (
-                                <motion.div key={index} onClick={() => router.push(`/patient/${card.id}/view`)}
-                                    whileHover={{ scale: 1.03 }}
-                                    transition={{ type: "spring", stiffness: 300, damping: 20 }}>
-                                    <Card className="flex flex-col p-5 border border-2">
-                                        <img
-                                            src={card.patient_portrait}
-                                            alt="profile"
-                                            className="w-full h-40 object-cover rounded-xl border border-2 p-2 mt-5"
-                                        />
-                                        <p className="px-2 font-bold">{card.name}</p>
-                                        <Card className="overflow-hidden h-23">
-                                            <p className="px-2 line-clamp-3">{card.description}</p>
-                                        </Card>
-                                        <div className="flex flex-row justify-between">
-                                            <Button className="w-20" variant="destructive" onClick={(e) => { e.stopPropagation(); delete_patient(card.id) }}>Delete</Button>
-                                            <Button className="bg-black w-20" onClick={(e) => { e.stopPropagation(); router.push(`/patient/${card.id}`) }}>Edit</Button>
-                                        </div>
-                                    </Card>
-                                </motion.div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-screen">
-                            <h2 className="font-bold text-lg">No patients registered</h2>
-                        </div>
-                    )}
-                </Card>
-            ) : (
-                <Card className="mt-5 p-8 h-170 w-[95%] border-3 bg-white overflow-y-auto">
-                    <div className="flex flex-col gap-4">
-                        <h1 className="font-bold text-4xl">Patient Registration</h1>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="font-semibold text-sm">Name</label>
-                            <Input placeholder="Enter name" value={name} onChange={(e) => setName(e.target.value)} />
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="font-semibold text-sm">Description</label>
-                            <Input placeholder="Enter description" value={description} onChange={(e) => setDescription(e.target.value)} />
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="font-semibold text-sm">Breed</label>
-                            <Input placeholder="Enter breed" value={breed} onChange={(e) => setBreed(e.target.value)} />
-                        </div>
-
-                        <div className="flex flex-row gap-4">
-                            <div className="flex flex-col gap-1 w-full">
-                                <label className="font-semibold text-sm">Age</label>
-                                <Input placeholder="Enter age" type="number" value={age} onChange={(e) => setAge(Number(e.target.value))} />
-                            </div>
-                            <div className="flex flex-col gap-1 w-full">
-                                <label className="font-semibold text-sm">Weight (kg)</label>
-                                <Input placeholder="Enter weight" type="number" value={weight} onChange={(e) => setWeight(Number(e.target.value))} />
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="font-semibold text-sm">Gender</label>
-                            <Combobox items={["male", "female"]} onValueChange={(val) => setGender(String(val))}>
-                                <ComboboxInput placeholder="Select gender" />
-                                <ComboboxContent>
-                                    <ComboboxEmpty>No items found.</ComboboxEmpty>
-                                    <ComboboxList>
-                                        {(item) => (
-                                            <ComboboxItem key={item} value={item} onChange={() => setGender(item)}>{item}</ComboboxItem>
-                                        )}
-                                    </ComboboxList>
-                                </ComboboxContent>
-                            </Combobox>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="font-semibold text-sm">Status</label>
-                            <Combobox items={["active", "inactive"]} onValueChange={(val) => setStatus(String(val))}>
-                                <ComboboxInput placeholder="Select status" />
-                                <ComboboxContent>
-                                    <ComboboxEmpty>No items found.</ComboboxEmpty>
-                                    <ComboboxList>
-                                        {(item) => (
-                                            <ComboboxItem key={item} value={item} onChange={() => setStatus(item)}>{item}</ComboboxItem>
-                                        )}
-                                    </ComboboxList>
-                                </ComboboxContent>
-                            </Combobox>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="font-semibold text-sm">Species</label>
-                            <Combobox items={species_} onValueChange={(val) => setSpecies(String(val))}>
-                                <ComboboxInput placeholder="Select a species" />
-                                <ComboboxContent>
-                                    <ComboboxEmpty>No items found.</ComboboxEmpty>
-                                    <ComboboxList>
-                                        {(item) => (
-                                            <ComboboxItem key={item} value={item} onChange={() => setSpecies(item)}>
-                                                {item}
-                                            </ComboboxItem>
-                                        )}
-                                    </ComboboxList>
-                                </ComboboxContent>
-                            </Combobox>
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <label className="font-semibold text-sm">Picture</label>
+            {activeTab === "list" ? (
+                loading ? (
+                    <div className="flex justify-center py-20">
+                        <LoaderCircle className="animate-spin size-10" />
+                    </div>
+                ) : patients.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {patients.map((patient) => (
                             <div
-                                onClick={() => fileInputRef.current?.click()}
-                                className="flex items-center justify-center h-62 bg-gray-100 rounded-lg border-2 border-dashed cursor-pointer overflow-hidden hover:bg-gray-200 transition"
+                                key={patient.id}
+                                onClick={() => router.push(`/patient/${patient.id}/view`)}
+                                className="pb-4 bg-[#156E68] rounded-xl drop-shadow-lg cursor-pointer hover:-translate-y-0.5 transition"
                             >
-                                {picturePreviewUrl ? (
-                                    <img src={picturePreviewUrl} alt="preview" className="h-full object-contain" />
-                                ) : (
-                                    <p className="font-bold text-gray-500">Upload files</p>
-                                )}
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => handlePictureSelect(e.target.files?.[0] ?? null)}
+                                <img
+                                    src={patient.patient_portrait ?? DEFAULT_PORTRAIT}
+                                    alt={patient.name}
+                                    className="w-full h-40 object-cover rounded-t-xl"
                                 />
-                            </div>
-                            {pictureFile && (
-                                <p className="text-gray-500 text-xs">{pictureFile.name}</p>
-                            )}
-                        </div>
+                                <div className="w-full h-[2px] bg-white mb-3" />
 
-                        <Button
-                            className="mt-4 w-25 self-center"
-                            onClick={() => create_patient()}
-                            disabled={registering}
-                        >
-                            {registering ? <LoaderCircle className="animate-spin w-4 h-4" /> : "Register"}
+                                <h2 className="px-5 text-white font-semibold">{patient.name}</h2>
+                                <p className="px-5 text-white/80 text-[13px] line-clamp-2 h-10">{patient.description}</p>
+
+                                <div className="px-5 flex justify-between items-center mt-4">
+                                    <Button aria-label={`Delete ${patient.name}`} className="bg-black/30 hover:bg-black/40 border border-white/20" onClick={(e) => { e.stopPropagation(); delete_patient(patient.id) }}>
+                                        <Trash2 />
+                                    </Button>
+                                    <Button className="bg-black/30 hover:bg-black/40 border border-white/20 w-20" onClick={(e) => { e.stopPropagation(); router.push(`/patient/${patient.id}`) }}>
+                                        Edit
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <Panel className="text-center text-gray-500 py-16">No patients registered</Panel>
+                )
+            ) : (
+                <Panel>
+                    <PatientForm
+                        values={form}
+                        onChange={setForm}
+                        pictureUrl={picturePreviewUrl}
+                        onPictureSelect={handlePictureSelect}
+                    />
+                    <div className="flex justify-end pt-6">
+                        <Button onClick={create_patient} disabled={registering}>
+                            {registering ? <LoaderCircle className="animate-spin size-4" /> : "Register"}
                         </Button>
                     </div>
-                </Card>
+                </Panel>
             )}
-        </div>
+        </Page>
     )
 }

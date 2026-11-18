@@ -94,23 +94,18 @@ export function DataTable<TData, TValue> ({
     })
 
     return (
-        <div className="flex flex-col items w-full px-5">
-            {/* Search and Visibility */}
-            <div className="flex items-center py-4">
-                {/* Search input */}                
-                <div className="w-[45%] bg-[#FFFFFF] rounded-lg">
-                    <Input 
-                        placeholder="Filter patient or diagnosis type"
-                        value={globalFilter}
-                        onChange={ (event) => setGlobalFilter(event.target.value) }
-                        className="w-full text-start"            
-                    />
-                    
-                </div>
-                
-                {/* Delete all */}
-                <Button 
-                    className="text-base ml-[40%] mr-5 px-5 rounded-lg"
+        <div className="flex flex-col w-full">
+            {/* Search, clear all, column toggle */}
+            <div className="flex items-center gap-2 pb-4">
+                <Input
+                    placeholder="Filter patient or diagnosis type"
+                    value={globalFilter}
+                    onChange={ (event) => setGlobalFilter(event.target.value) }
+                    className="max-w-sm"
+                />
+
+                <Button
+                    className="ml-auto"
                     variant="destructive"
                     onClick={async () => {
                                 try{
@@ -141,8 +136,8 @@ export function DataTable<TData, TValue> ({
                 {/* Visible Ticker */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="ml-auto text-xl">
-                            columns
+                        <Button variant="outline">
+                            Columns
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="">
@@ -173,15 +168,15 @@ export function DataTable<TData, TValue> ({
 
 
             {/* Data Table */}
-            <div className="overflow-hidden rounded-md w-full h-full border border-3">
-                <ScrollArea className="h-[446px] pr-3">
+            <div className="overflow-hidden rounded-lg w-full border bg-white">
+                <ScrollArea className="h-[480px]">
                     <Table>
-                        <TableHeader className="bg-[#D9D9D9]">
+                        <TableHeader className="bg-gray-100">
                             {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id} className=" bg-[#D9D9D9]">
+                                <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => {
                                         return (
-                                            <TableHead key={header.id} className="text-lg ">
+                                            <TableHead key={header.id}>
                                                 {header.isPlaceholder
                                                     ? null
                                                     : flexRender(
@@ -194,11 +189,11 @@ export function DataTable<TData, TValue> ({
                                 </TableRow>
                             ))}
                         </TableHeader>
-                        <TableBody className="bg-[#FFFFFF] hover:bg-gray-100">
+                        <TableBody>
                             {loading ? (
                                 <TableRow>
                                     <TableCell colSpan={columns.length} className="h-24 text-center">
-                                        <div className="flex items-center justify-center gap-2 text-lg text-muted-foreground">
+                                        <div className="flex items-center justify-center gap-2 text-muted-foreground">
                                             <LoaderCircle className="h-5 w-5 animate-spin" />
                                             Loading...
                                         </div>
@@ -211,7 +206,7 @@ export function DataTable<TData, TValue> ({
                                         data-state={row.getIsSelected() && "selected"}
                                     >
                                         {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id} className="text-lg">
+                                            <TableCell key={cell.id}>
                                                 {
                                                     flexRender(cell.column.columnDef.cell, cell.getContext())
                                                 }
@@ -221,7 +216,7 @@ export function DataTable<TData, TValue> ({
                                 ))
                             ): (
                                 <TableRow>
-                                    <TableCell colSpan={columns.length} className="h-24 text-center text-lg ">
+                                    <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
                                         No results 
                                     </TableCell>
                                 </TableRow>

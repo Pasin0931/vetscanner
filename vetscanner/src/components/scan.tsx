@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react"
 
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Field, Page, PageHeader, Panel } from "@/components/layout/page"
+import type { Patient } from "@/types/patient"
 import {
     Combobox,
     ComboboxContent,
@@ -14,21 +15,6 @@ import {
 } from "@/components/ui/combobox"
 
 import { useScanContext } from "@/context/scan_content"
-
-type Patient = {
-    id: number
-    name: string
-    breed: string | null
-    age: number | null
-    weight: number | null
-    gender: string | null
-    description: string | null
-    species: string
-    patient_portrait: string | null
-    status: string | null
-    user_id: number
-    created_at: string
-}
 
 type ScanStatus = "idle" | "uploading" | "processing" | "done" | "error"
 
@@ -215,12 +201,12 @@ export default function ScanPage() {
     }
 
     return (
-        <div className="flex flex-col items-center w-[95%] px-5">
-            <Card className="mt-5 p-8 w-[95%] border-3 bg-white">
-                <div className="flex flex-col gap-4">
-                    <h1 className="font-bold text-4xl">Scanner</h1>
+        <Page>
+            <PageHeader title="Scanner" description="Upload a whole slide image to get a tumor report" />
 
-                    <div className="flex flex-col gap-1 w-64">
+            <Panel>
+                <div className="flex flex-col gap-4">
+                    <Field label="Patient" className="w-full sm:w-72">
                         <Combobox
                             items={patientLabels}
                             onValueChange={(val) => {
@@ -236,7 +222,7 @@ export default function ScanPage() {
                                 </ComboboxList>
                             </ComboboxContent>
                         </Combobox>
-                    </div>
+                    </Field>
 
                     {status === "idle" && !file && (
                         <div
@@ -333,21 +319,20 @@ export default function ScanPage() {
                         <p className="text-red-500 text-[13px]">{errorMessage}</p>
                     )}
 
-                    {status === "done" ? (
-                        <Button className="w-25 self-center px-15 bg-[#B1BB1E] text-black font-bold" onClick={handleReset}>
-                            Scan another
-                        </Button>
-                    ) : (
-                        <Button
-                            className="w-25 self-center px-15"
-                            onClick={handle_bt}
-                            disabled={status === "uploading" || status === "processing"}
-                        >
-                            Submit
-                        </Button>
-                    )}
+                    <div className="flex justify-end">
+                        {status === "done" ? (
+                            <Button onClick={handleReset}>Scan another</Button>
+                        ) : (
+                            <Button
+                                onClick={handle_bt}
+                                disabled={status === "uploading" || status === "processing"}
+                            >
+                                Submit
+                            </Button>
+                        )}
+                    </div>
                 </div>
-            </Card>
-        </div>
+            </Panel>
+        </Page>
     )
 }
