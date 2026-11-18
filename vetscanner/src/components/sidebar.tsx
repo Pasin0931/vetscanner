@@ -59,7 +59,7 @@ export default function Sidebar() {
             <div>
                 <div className="p-3 pb-4">
                     <div className="flex items-center gap-3 pb-3 pl-3 pt-4">
-                        <img src="/icon.svg" alt="" className="size-9" />
+                        <img src="/logo.svg" alt="" className="size-9" />
                         <h1 className="text-3xl font-bold text-white">Vetscanner</h1>
                     </div>
                     <div className="bg-white/30 w-full h-[1px]" />
