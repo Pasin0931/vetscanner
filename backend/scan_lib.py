@@ -127,13 +127,17 @@ def _normalize_patch(patch_rgb_float: np.ndarray, stats) -> torch.Tensor:
     return transforms.Normalize(mean, std)(tensor)
 
 
-def _find_tumor_sub_boxes(pred_class_map: np.ndarray, loc_x: int, loc_y: int, downsample: float) -> list:
+def _find_tumor_sub_boxes(pred_class_map: np.ndarray, loc_x: int, loc_y: int, downsample: float,
+                          skip_x: int = 0, skip_y: int = 0) -> list:
     """
     Given a tile's per-pixel class map, subdivide it into a SUB_TILE_GRID x
     SUB_TILE_GRID grid of smaller cells and return the level-0 (x, y, w, h)
-    box for every cell whose dominant class is Tumor. This produces a
-    finer-grained set of boxes that more closely follow the tumor shape
-    within the tile than a single box for the whole tile would.
+    box for every cell that is at least TUMOR_FRACTION_THRESHOLD tumor.
+
+    skip_x / skip_y: how many tile pixels (from the left / top) overlap the
+    previous tile. Edge tiles are shifted back to stay inside the slide, so
+    that strip is already covered; boxes are trimmed to start after it so
+    they don't stack on top of the neighbour's boxes.
     """
     boxes = []
     map_h, map_w = pred_class_map.shape
@@ -143,10 +147,18 @@ def _find_tumor_sub_boxes(pred_class_map: np.ndarray, loc_x: int, loc_y: int, do
     # Level-0 size of one pixel in the (downsampled) class map
     px_size_l0 = downsample * (SEGMENTATION_PATCH_SIZE / map_w)
 
+    # Overlap converted from tile pixels to class-map pixels
+    skip_x_map = int(skip_x * map_w / SEGMENTATION_PATCH_SIZE)
+    skip_y_map = int(skip_y * map_h / SEGMENTATION_PATCH_SIZE)
+
     for row in range(SUB_TILE_GRID):
         for col in range(SUB_TILE_GRID):
             y0, y1 = row * cell_h, min((row + 1) * cell_h, map_h)
             x0, x1 = col * cell_w, min((col + 1) * cell_w, map_w)
+            # Trim away the part already covered by the previous tile
+            y0, x0 = max(y0, skip_y_map), max(x0, skip_x_map)
+            if y0 >= y1 or x0 >= x1:
+                continue
             cell = pred_class_map[y0:y1, x0:x1]
             if cell.size == 0:
                 continue
@@ -195,7 +207,7 @@ def _generate_annotated_thumbnail_base64(
         # color tuple should be written directly without BGR conversion —
         # converting to BGR here would write swapped channels into an
         # already-RGB array, producing incorrect colors.
-        cv2.rectangle(thumb_array, (tx, ty), (x2, y2), color_rgb, thickness=2)
+        cv2.rectangle(thumb_array, (tx, ty), (x2, y2), color_rgb, thickness=3)
 
     annotated = PILImage.fromarray(thumb_array)
     buffer = io.BytesIO()
@@ -288,8 +300,11 @@ def _run_segmentation_grid(slide: "openslide.OpenSlide") -> tuple:
                 if tile_tumor_pixels.mean() >= TUMOR_FRACTION_THRESHOLD:
                     tile_key = (loc_x, loc_y)
                     tumor_tile_coords.append(tile_key)
+                    # Overlap with the previous tile (only non-zero for the
+                    # shifted edge tiles), e.g. x=788, patch=512 -> 236
                     sub_boxes_by_tile[tile_key] = _find_tumor_sub_boxes(
-                        pred_class_map, loc_x, loc_y, downsample
+                        pred_class_map, loc_x, loc_y, downsample,
+                        skip_x=(-x) % patch_size, skip_y=(-y) % patch_size
                     )
 
     return tumor_tile_coords, sub_boxes_by_tile, tumor_mask
@@ -350,7 +365,7 @@ def _generate_polygon_annotated_thumbnail_base64(
         scaled_contour[:, 0, 0] *= scale_x
         scaled_contour[:, 0, 1] *= scale_y
         scaled_contour = scaled_contour.astype(np.int32)
-        cv2.drawContours(thumb_array, [scaled_contour], -1, outline_color, thickness=2)
+        cv2.drawContours(thumb_array, [scaled_contour], -1, outline_color, thickness=3)
 
     annotated = PILImage.fromarray(thumb_array)
     buffer = io.BytesIO()
