@@ -150,8 +150,12 @@ export default function ScanPage() {
                 const blob = xhr.response as Blob
 
                 const disposition = xhr.getResponseHeader("Content-Disposition") || ""
-                const match = disposition.match(/filename="?([^"]+)"?/)
-                const filename = match ? match[1] : `vetscanner_report_${Date.now()}.pdf`
+                // Prefer the UTF-8 name (supports Thai), fall back to the plain one
+                const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/)
+                const plainMatch = disposition.match(/filename="([^"]+)"/)
+                const filename = utf8Match
+                    ? decodeURIComponent(utf8Match[1])
+                    : plainMatch ? plainMatch[1] : `vetscanner_report_${Date.now()}.pdf`
 
                 // trigger the browser to download automatically
                 const downloadUrl = window.URL.createObjectURL(blob)
