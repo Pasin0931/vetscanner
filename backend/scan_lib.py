@@ -88,6 +88,11 @@ CLASSIFICATION_COLORS_RGB = {
 
 MIN_TUMOR_TILES_FOR_DIAGNOSIS = 3  # below this, treat result as inconclusive
 
+# A tile (or sub-cell) counts as tumor when at least this share of its
+# pixels is tumor. 0.5 = "mostly tumor"; lower catches tumors spread
+# across many tiles that are each only partly tumor.
+TUMOR_FRACTION_THRESHOLD = 0.3
+
 # Each SEGMENTATION_PATCH_SIZE tile is subdivided into a grid of
 # SUB_TILE_GRID x SUB_TILE_GRID cells when drawing annotations, using the
 # per-pixel class map we already computed during segmentation. This gives a
@@ -146,9 +151,7 @@ def _find_tumor_sub_boxes(pred_class_map: np.ndarray, loc_x: int, loc_y: int, do
             if cell.size == 0:
                 continue
 
-            values, counts = np.unique(cell, return_counts=True)
-            dominant_class = values[np.argmax(counts)]
-            if dominant_class != SEGMENTATION_TUMOR_CLASS_INDEX:
+            if np.mean(cell == SEGMENTATION_TUMOR_CLASS_INDEX) < TUMOR_FRACTION_THRESHOLD:
                 continue
 
             box_x = loc_x + int(x0 * px_size_l0)
@@ -282,10 +285,7 @@ def _run_segmentation_grid(slide: "openslide.OpenSlide") -> tuple:
                 tile_tumor_pixels = (pred_class_map == SEGMENTATION_TUMOR_CLASS_INDEX)
                 tumor_mask[y:y + patch_size, x:x + patch_size][tile_tumor_pixels] = 255
 
-                values, counts = np.unique(pred_class_map, return_counts=True)
-                dominant_class = values[np.argmax(counts)]
-
-                if dominant_class == SEGMENTATION_TUMOR_CLASS_INDEX:
+                if tile_tumor_pixels.mean() >= TUMOR_FRACTION_THRESHOLD:
                     tile_key = (loc_x, loc_y)
                     tumor_tile_coords.append(tile_key)
                     sub_boxes_by_tile[tile_key] = _find_tumor_sub_boxes(
