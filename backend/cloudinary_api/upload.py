@@ -8,7 +8,8 @@ from cloudinary_api.service import (
     upload_image,
 )
 from database import get_db
-from model import Images
+from model import Images, Patients
+from auth.auth_dependency import get_current_user
 
 router = APIRouter(
     prefix="/upload",
@@ -21,8 +22,13 @@ async def upload(
     pet_id: int,
     type: str,
     file: UploadFile = File(...),
+    current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    patient = db.query(Patients).filter(Patients.id == pet_id, Patients.user_id == current_user.id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
     allowed = {"PROFILE", "MEDICAL_RECORD", "XRAY", "LAB_RESULT"}
 
     if type not in allowed:
@@ -111,9 +117,24 @@ async def upload(
     }
 
 
-@router.delete("/{public_id}")
-async def remove(public_id: str):
+@router.delete("/{public_id:path}")
+async def remove(
+    public_id: str,
+    current_user=Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    img = (
+        db.query(Images)
+        .join(Patients, Images.pet_id == Patients.id)
+        .filter(Images.public_id == public_id, Patients.user_id == current_user.id)
+        .first()
+    )
+    if not img:
+        raise HTTPException(status_code=404, detail="Image not found")
+
     result = delete_image(public_id)
+    db.delete(img)
+    db.commit()
 
     return {
         "success": True,

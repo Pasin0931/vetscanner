@@ -17,6 +17,7 @@ from scan_lib import process_slide, generate_pdf_report
 import shutil
 import tempfile
 import json
+from urllib.parse import quote
 
 from cloudinary_api import config
 from cloudinary_api.upload import router as upload_router
@@ -46,6 +47,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],  # lets the browser read the report file name
 )
 
 app.include_router(upload_router)
@@ -175,7 +177,10 @@ def get_all_logs(current_user=Depends(get_current_user), db: Session = Depends(g
     return [{"id": log.id,
              "patient_id": log.patient_id,
              "patient": log.patient.name,
-             "result": json.loads(log.result),
+
+             "result": json.loads(log.result) if log.result else {},
+             "status": log.status,
+             
              "confidence_score": log.confidence_score,
              "pdf_report": log.pdf_report,
              "created_at": log.created_at } for log in logs]
@@ -310,11 +315,14 @@ async def scan_slide(file: UploadFile = File(...), patient_id: int = Form(...), 
         scan_log.pdf_report = pdf_upload["url"]
         db.commit()
  
+        # Headers only allow plain English letters, so Thai names go in the encoded filename*
+        ascii_name = f"scan_report_{scan_log.id}.pdf"
+        utf8_name = quote(f"{filename}.pdf")
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
             headers={
-                "Content-Disposition": f'attachment; filename="{filename}.pdf"'
+                "Content-Disposition": f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{utf8_name}"
             }
         )
  
