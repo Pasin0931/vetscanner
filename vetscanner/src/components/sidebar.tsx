@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { LayoutDashboard, PawPrint, ScanLine, History, Info, LogOut } from "lucide-react"
 
 import { useScanContext } from "@/context/scan_content"
+import UserAvatar from "@/components/user_avatar"
 
 const NAV_ITEMS = [
     { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -19,6 +20,7 @@ export default function Sidebar() {
     const pathname = usePathname()
     const { isScanning } = useScanContext()
     const [email, setEmail] = useState<string | null>(null)
+    const [name, setName] = useState<string | null>(null)
 
     useEffect(() => {
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, { credentials: "include" })
@@ -26,8 +28,14 @@ export default function Sidebar() {
                 if (!res.ok) throw new Error("Not authenticated")
                 return res.json()
             })
-            .then((data) => setEmail(data.email))
-            .catch(() => setEmail(null))
+            .then((data) => {
+                setEmail(data.email)
+                setName(data.name)
+            })
+            .catch(() => {
+                setEmail(null)
+                setName(null)
+            })
     }, [])
 
     // Block leaving the page while a scan is running
@@ -60,7 +68,7 @@ export default function Sidebar() {
                 <div className="p-3 pb-4">
                     <div className="flex items-center gap-3 pb-3 pl-3 pt-4">
                         <img src="/logo.svg" alt="" className="size-9" />
-                        <h1 className="text-3xl font-bold text-white">Vetscanner</h1>
+                        <h1 className="text-3xl font-bold text-white pl-1">Vetscanner</h1>
                     </div>
                     <div className="bg-white/30 w-full h-[1px]" />
                 </div>
@@ -83,8 +91,12 @@ export default function Sidebar() {
             </div>
 
             <div>
-                <div className="bg-black/10 px-4 py-2 text-sm truncate">
-                    Hi, {email ?? "..."}
+                <div className="flex items-center gap-3 bg-black/10 px-4 py-3 text-sm">
+                    <UserAvatar name={name} />
+                    <div className="min-w-0">
+                        <p className="truncate font-semibold">{name ?? "..."}</p>
+                        <p className="truncate text-xs text-white/70">{email ?? "..."}</p>
+                    </div>
                 </div>
                 <button
                     className="flex items-center gap-3 bg-black/10 hover:bg-black/20 transition-colors px-4 py-3 w-full"
