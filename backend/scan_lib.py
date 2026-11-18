@@ -201,6 +201,19 @@ def _generate_annotated_thumbnail_base64(
     return f"data:image/jpeg;base64,{encoded}"
 
 
+def _tile_starts(length: int, patch_size: int) -> list:
+    """
+    Start positions that cover 0..length with patch_size tiles, all fully
+    inside the slide. e.g. length=1300, patch=512 -> [0, 512, 788]
+    """
+    if length < patch_size:
+        return []
+    starts = list(range(0, length - patch_size + 1, patch_size))
+    if starts[-1] + patch_size < length:
+        starts.append(length - patch_size)
+    return starts
+
+
 def _run_segmentation_grid(slide: "openslide.OpenSlide") -> tuple:
     """
     Walk the slide in a grid at SEGMENTATION_LEVEL, run the segmentation
@@ -237,19 +250,11 @@ def _run_segmentation_grid(slide: "openslide.OpenSlide") -> tuple:
     stats = segmentation_learner.data.stats
 
     with torch.no_grad():
-        for y in range(0, level_h, patch_size):
-            for x in range(0, level_w, patch_size):
-                # Skip any tile whose patch_size region would extend past
-                # the slide's actual dimensions. Since level_w/level_h are
-                # almost never exact multiples of patch_size, the last
-                # column and last row of the grid would otherwise read
-                # partly past the real image into undefined padding data —
-                # this is the actual root cause of false tumor strips along
-                # slide edges (seen as a solid line of flagged tiles along
-                # one edge), not just a rare corner case.
-                if x + patch_size > level_w or y + patch_size > level_h:
-                    continue
-
+        # The last row/column is shifted back to end exactly at the slide
+        # edge, so the whole slide is covered without reading past it
+        # (reading past the edge gives padding data and false tumor strips)
+        for y in _tile_starts(level_h, patch_size):
+            for x in _tile_starts(level_w, patch_size):
                 # location for read_region must be in level-0 coordinates
                 loc_x = int(x * downsample)
                 loc_y = int(y * downsample)
