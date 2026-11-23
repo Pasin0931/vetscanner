@@ -69,7 +69,8 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
 
     session_id = create_session(db, user.id, expire_days=expire_days)
 
-    response = RedirectResponse(url=FRONTEND_URL)
+    # Go straight into the app after Google login
+    response = RedirectResponse(url=f"{FRONTEND_URL}/dashboard")
 
     if remember:
         response.set_cookie(

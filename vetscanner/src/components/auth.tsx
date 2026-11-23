@@ -30,7 +30,7 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
         setErrorMsg("")
         try {
             await login(email, password, rememberMe)
-            alert("Login success")
+            // alert("Login success")
             // location.reload()
             router.push("/dashboard");
         } catch (err: any) {
@@ -62,7 +62,7 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
         const check_have_cookie = async () => {
             const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {credentials: "include", method: "GET"})
             if (res.ok) {
-                alert("Registered")
+                // alert("Registered")
                 router.push("/dashboard")
             } else {
                 router.push("/authentication?tab=Login")
