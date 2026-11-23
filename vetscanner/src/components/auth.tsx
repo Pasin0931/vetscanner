@@ -92,78 +92,62 @@ export default function UsrAuth({ startTab }: UsrAuthProps) {
                 <button onClick={() => { setActiveTab("Register"); setErrorMsg("") }} className="relative z-10 w-[50%] text-center">Register</button>
             </div>
 
-            <div className="flex flex-col gap-7 pt-7 w-80">
-                <div>
-                    <h2 className="font-bold ml-6 mb-2">Email</h2>
+            <div className="flex flex-col gap-5 pt-7 w-80">
+                <div className="flex flex-col gap-1">
+                    <label className="text-sm font-semibold">Email</label>
                     <Input className="bg-[#F7F7F7]"
                         placeholder="Your email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                    >
-                    </Input>
+                    />
                 </div>
-                <div>
-                    <h2 className="font-bold ml-6 mb-2">Password</h2>
+                <div className="flex flex-col gap-1">
+                    <label className="text-sm font-semibold">Password</label>
                     <Input className="bg-[#F7F7F7]"
                         placeholder="Your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         type="password"
-                    >
-                    </Input>
+                    />
                 </div>
 
-                {activeTab === "Login" ? (
-                    <div className="flex flex-row justify-between items-center gap-23 px-3 w-full">
-                        <div className="flex flex-row justify-between items-center gap-3 font-bold text-[13px]">
-                            <Checkbox
-                                checked={rememberMe}
-                                onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
-                            />
-                            <button className="font-bold">Remember me</button>
-                        </div>
-                        <button className="font-bold text-[13px]">
-                            Forgot Password
+                <div className="flex items-center justify-between text-sm">
+                    <label className="flex items-center gap-2 font-semibold whitespace-nowrap cursor-pointer">
+                        <Checkbox
+                            checked={rememberMe}
+                            onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
+                        />
+                        Remember me
+                    </label>
+                    {activeTab === "Login" && (
+                        <button className="font-semibold whitespace-nowrap text-gray-500 hover:text-black">
+                            Forgot password?
                         </button>
-                    </div>
-                ) : (
-                    <div className="flex flex-row justify-start items-start pr-46.5">
-                        <div className="flex flex-row justify-start items-center gap-3 ml-3 font-bold text-[13px]">
-                            <Checkbox
-                                checked={rememberMe}
-                                onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
-                            />
-                            <button className="font-bold">Remember me</button>
-                        </div>
-                    </div>
-                )}
-
-                {errorMsg && (
-                    <p className="text-red-500 text-[13px] text-center -my-3">{errorMsg}</p>
-                )}
-
-                <div className="flex flex-row justify-center items-center">
-                    {activeTab === "Login" ? (
-                        <Button className="bg-[#B1BB1E] text-black font-bold px-6 w-24" onClick={() => handle_login_bt()}>Login</Button>
-                    ) : (
-                        <Button className="bg-[#B1BB1E] text-black font-bold px-6 w-24" onClick={() => handle_register_bt()}>Register</Button>
                     )}
                 </div>
 
-                <div>
-                    <h2 className="font-bold text-center">Or {activeTab?.toLowerCase()} in with google</h2>
+                {errorMsg && (
+                    <p className="text-red-500 text-sm text-center">{errorMsg}</p>
+                )}
+
+                {activeTab === "Login" ? (
+                    <Button className="bg-[#B1BB1E] hover:bg-[#9CA51A] text-black font-bold w-full" onClick={() => handle_login_bt()}>Login</Button>
+                ) : (
+                    <Button className="bg-[#B1BB1E] hover:bg-[#9CA51A] text-black font-bold w-full" onClick={() => handle_register_bt()}>Register</Button>
+                )}
+
+                <div className="flex items-center gap-3 text-sm text-gray-500">
+                    <div className="h-px flex-1 bg-gray-200" />
+                    or
+                    <div className="h-px flex-1 bg-gray-200" />
                 </div>
 
-                <div className="flex flex-col items-center justify-center ">
-                    <button
-                        onClick={() => {
-                            handle_oauth()
-                        }}
-                        className="px-6 py-2 bg-white border rounded-lg hover:bg-gray-100 transition "
-                    >
-                        {activeTab} in with Google
-                    </button>
-                </div>
+                <button
+                    onClick={handle_oauth}
+                    className="w-full py-2 bg-white border rounded-lg text-sm font-semibold hover:bg-gray-100 transition"
+                >
+                    Continue with Google
+                </button>
             </div>
 
         </div>
